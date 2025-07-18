@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Сервис 1: Наше приложение Pastebin
+  pastebin:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+
+  # Сервис 2: Prometheus (сборщик метрик)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      # Подключаем наш файл конфигурации и папку для данных
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  # Сервис 3: Grafana (визуализатор графиков)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3100:3000" # Мы используем порт 3100 на хосте, чтобы не конфликтовать с pastebin
+    volumes:
+      # Подключаем папку с авто-настройкой и папку для данных
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}

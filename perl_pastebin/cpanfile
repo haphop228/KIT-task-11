@@ -1,6 +1,8 @@
 # --- Зависимости для работы приложения ---
-requires 'Mojolicious';   # Веб-фреймворк
-requires 'DB_File';       # Драйвер для BerkeleyDB
-requires 'Digest::SHA';   # Для генерации уникальных ID
-requires 'Storable';      # Для безопасного хранения структур данных в БД
-requires 'Time::HiRes';   # Для точных временных меток
+requires 'Mojolicious';
+requires 'DB_File';
+requires 'Digest::SHA';
+requires 'Storable';
+requires 'Time::HiRes';
+# --- Новая зависимость для метрик ---
+requires 'Mojolicious::Plugin::Prometheus';
