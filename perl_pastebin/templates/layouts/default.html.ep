@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/pico.min.css" />
+    <link rel="stylesheet" href="/css/github-dark.min.css">
+    <style>
+      main { padding-top: 0; }
+      pre { padding: 1.5em; border-radius: 8px; }
+      .container { max-width: 960px; }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <%= content %>
+    </main>
+    
+    <%# Сюда будет вставляться JavaScript из других шаблонов %>
+    <%= content_for 'scripts' %>
+</body>
+</html>

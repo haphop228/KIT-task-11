@@ -1,0 +1,20 @@
+% layout 'default';
+% title 'View Paste';
+
+<nav>
+  <ul>
+    <li><strong>Language: <%= $paste->{language} %></strong></li>
+  </ul>
+  <ul>
+    <li><a href="/" role="button" class="secondary">Create New</a></li>
+  </ul>
+</nav>
+
+<%# Оборачиваем код в теги <pre><code> с указанием класса языка %>
+<%# Это нужно, чтобы highlight.js понял, как подсвечивать синтаксис %>
+<pre><code class="language-<%= $paste->{language} %>"><%= $paste->{content} %></code></pre>
+
+<% content_for 'scripts' => begin %>
+  <script src="/js/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+<% end %>

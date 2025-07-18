@@ -1,0 +1,18 @@
+% layout 'default';
+% title 'Create New Paste';
+
+<h1>Create a New Paste</h1>
+<form action="/" method="POST">
+  <figure>
+    <textarea id="content" name="content" rows="18" placeholder="Paste your code here..." required></textarea>
+  </figure>
+
+  <div class="grid">
+    <label for="language">
+      Syntax Language
+      <input type="text" id="language" name="language" placeholder="e.g., perl, python, json (optional)">
+    </label>
+
+    <button type="submit">Create Paste</button>
+  </div>
+</form>
