@@ -1,16 +1,53 @@
 % layout 'default';
 % title 'Create New Paste';
 
+<style>
+  /* Стили специально для этой страницы */
+  form {
+    height: 100%; /* Форма должна занимать всю высоту родителя (main) */
+    display: flex;
+    flex-direction: column;
+  }
+  form > figure {
+    flex-grow: 1; /* Блок с textarea должен растягиваться */
+    margin: 0 0 1rem 0;
+  }
+  form > figure > textarea {
+    height: 100%; /* Textarea занимает всю высоту своего родителя (figure) */
+    resize: none; /* Отключаем ручное изменение размера, т.к. он теперь автоматический */
+  }
+</style>
+
 <h1>Create a New Paste</h1>
 <form action="/" method="POST">
   <figure>
-    <textarea id="content" name="content" rows="18" placeholder="Paste your code here..." required></textarea>
+    <%# УБРАЛИ атрибут rows="18". Высота теперь управляется через CSS. %>
+    <textarea id="content" name="content" placeholder="Paste your code here..." required></textarea>
   </figure>
 
   <div class="grid">
     <label for="language">
       Syntax Language
-      <input type="text" id="language" name="language" placeholder="e.g., perl, python, json (optional)">
+      <select id="language" name="language">
+        <option value="plaintext" selected>Plain Text</option>
+        <option value="perl">Perl</option>
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+        <option value="html">HTML</option>
+        <option value="css">CSS</option>
+        <option value="json">JSON</option>
+        <option value="sql">SQL</option>
+        <option value="bash">Bash / Shell</option>
+        <option value="c">C</option>
+        <option value="cpp">C++</option>
+        <option value="csharp">C#</option>
+        <option value="java">Java</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust</option>
+        <option value="ruby">Ruby</option>
+        <option value="yaml">YAML</option>
+        <option value="dockerfile">Dockerfile</option>
+      </select>
     </label>
 
     <button type="submit">Create Paste</button>

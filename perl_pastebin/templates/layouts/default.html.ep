@@ -7,17 +7,48 @@
     <link rel="stylesheet" href="/css/pico.min.css" />
     <link rel="stylesheet" href="/css/github-dark.min.css">
     <style>
-      main { padding-top: 0; }
+      /* Заставляем HTML и BODY занимать всю высоту окна */
+      html, body {
+        height: 100vh; /* 100% высоты окна просмотра (Viewport Height) */
+        margin: 0;
+      }
+      /* Превращаем BODY в вертикальный flex-контейнер */
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+      /* Заголовок имеет фиксированную высоту */
+      header {
+        background-color: #002b36;
+        color: #93a1a1;
+        text-align: center;
+        padding: 1rem 0;
+        border-bottom: 3px solid #cb4b16;
+        /* Убираем нижний отступ, чтобы не было лишнего пространства */
+        margin-bottom: 0;
+      }
+      /* Основной контент должен РАСТЯГИВАТЬСЯ, чтобы занять все свободное место */
+      main.container {
+        flex-grow: 1; /* Это самое важное правило! */
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        /* Чтобы main мог управлять высотой form, он тоже должен быть flex-контейнером */
+        display: flex;
+        flex-direction: column;
+      }
       pre { padding: 1.5em; border-radius: 8px; }
       .container { max-width: 960px; }
     </style>
 </head>
 <body>
+    <header>
+        <h1 style="margin: 0; font-size: 1.8em; letter-spacing: 2px;">СДЕЛАНО НА PERL</h1>
+    </header>
+    
     <main class="container">
         <%= content %>
     </main>
     
-    <%# Сюда будет вставляться JavaScript из других шаблонов %>
     <%= content_for 'scripts' %>
 </body>
 </html>
