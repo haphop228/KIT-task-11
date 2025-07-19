@@ -15,7 +15,6 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      # Подключаем наш файл конфигурации и папку для данных
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
@@ -25,13 +24,23 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3100:3000" # Мы используем порт 3100 на хосте, чтобы не конфликтовать с pastebin
+      - "3100:3000"
     volumes:
-      # Подключаем папку с авто-настройкой и папку для данных
       - ./grafana/provisioning/:/etc/grafana/provisioning/
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
+
+  # НОВЫЙ СЕРВИС 4: Locust (нагрузочный тестер)
+  locust:
+    image: locustio/locust
+    ports:
+      # Веб-интерфейс Locust будет доступен на порту 8089
+      - "8089:8089"
+    volumes:
+      # Подключаем папку с нашим скриптом
+      - ./locust:/mnt/locust
+    command: -f /mnt/locust/locustfile.py
 
 volumes:
   prometheus_data: {}
