@@ -23,25 +23,31 @@ services:
     image: grafana/grafana:latest
     ports:
       - "3100:3000"
-    environment:
-      GF_SECURE_SETTINGS_TELEGRAM_BOT_TOKEN: "${BOT_TOKEN}"
     volumes:
       - ./grafana/provisioning/:/etc/grafana/provisioning/
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
 
-  # --- ИЗМЕНЕННАЯ СЕКЦИЯ LOCUST ---
   locust:
     image: locustio/locust
     ports:
       - "8089:8089"
-    # ИЗМЕНЕНИЕ 1: Мы монтируем наш скрипт прямо в рабочую директорию контейнера
     volumes:
-      - ./locust/locustfile.py:/home/locust/locustfile.py
-    # ИЗМЕНЕНИЕ 2: Мы полностью УБИРАЕМ command.
-    # Теперь Docker запустит команду по умолчанию из образа Locust,
-    # которая автоматически найдет locustfile.py в своей домашней директории.
+      - ./locust:/mnt/locust
+    command: -f /mnt/locust/locustfile.py
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      # Монтируем всю папку с конфигурацией
+      - ./alertmanager/:/config/
+      # ИСПРАВЛЕНИЕ: Отдельно монтируем файл с секретом в нужную директорию
+      # :ro делает файл доступным только для чтения внутри контейнера - это лучшая практика
+      - ./secrets/telegram_bot_token:/etc/alertmanager/secrets/telegram_bot_token:ro
+    command: '--config.file=/config/config.yml'
 
 volumes:
   prometheus_data: {}

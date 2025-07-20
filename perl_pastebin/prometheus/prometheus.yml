@@ -1,6 +1,16 @@
 global:
   scrape_interval: 15s
 
+# Секция для подключения правил алертов
+rule_files:
+  - "/etc/prometheus/alert.rules.yml"
+
+# Секция, указывающая, где находится Alertmanager
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets: ['alertmanager:9093']
+
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:

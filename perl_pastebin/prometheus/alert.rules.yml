@@ -1,21 +1,28 @@
 groups:
-- name: PastebinServiceAlerts
+- name: pastebin-service-alerts
   rules:
   
+  # Правило 1: Высокая задержка p99
   - alert: HighRequestLatency
+    # Выражение на языке PromQL. Срабатывает, если p99 latency > 0.5 секунды
     expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="pastebin"}[2m])) by (le)) > 0.5
+    # Условие должно выполняться в течение 1 минуты, чтобы алерт сработал (для защиты от ложных всплесков)
     for: 1m
     labels:
       severity: 'critical'
+    # Аннотации - это текст, который увидит пользователь в уведомлении
     annotations:
-      summary: "High Request Latency (p99)"
-      description: "p99 latency is above 500ms for 1 minute on the 'pastebin' service."
+      summary: "High Request Latency on Pastebin"
+      description: "p99 latency is {{ $value | printf \"%.2fs\" }}, which is above the 500ms threshold."
 
+  # Правило 2: Высокий RPS к базе данных
   - alert: HighDatabaseRPS
+    # Срабатывает, если скорость запросов к БД > 100 в секунду
     expr: rate(db_requests_total{job="pastebin"}[1m]) > 100
+    # Условие должно выполняться 30 секунд
     for: 30s
     labels:
       severity: 'warning'
     annotations:
-      summary: "High Database Load"
-      description: "Database request rate is over 100 RPS for 30 seconds."
+      summary: "High Database RPS on Pastebin"
+      description: "Database request rate is {{ $value | printf \"%.0f\" }} RPS, which is above the 100 RPS threshold."
