@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   pastebin:
     build: .
@@ -7,7 +5,6 @@ services:
       - "3000:3000"
     volumes:
       - ./data:/app/data
-      - ./hypnotoad.conf:/app/hypnotoad.conf
 
   prometheus:
     image: prom/prometheus:latest
@@ -18,6 +15,8 @@ services:
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+    depends_on:
+      - pastebin
 
   grafana:
     image: grafana/grafana:latest
@@ -42,12 +41,13 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      # Монтируем всю папку с конфигурацией
       - ./alertmanager/:/config/
-      # ИСПРАВЛЕНИЕ: Отдельно монтируем файл с секретом в нужную директорию
-      # :ro делает файл доступным только для чтения внутри контейнера - это лучшая практика
+      # ИСПРАВЛЕНИЕ: Оставляем только монтирование токена.
       - ./secrets/telegram_bot_token:/etc/alertmanager/secrets/telegram_bot_token:ro
-    command: '--config.file=/config/config.yml'
+    command:
+      - '--config.file=/config/config.yml'
+    depends_on:
+      - prometheus
 
 volumes:
   prometheus_data: {}

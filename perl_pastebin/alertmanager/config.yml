@@ -2,32 +2,26 @@ global:
   resolve_timeout: 5m
 
 route:
+  receiver: 'telegram-notifications'
   group_by: ['alertname', 'job']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 1h
-  receiver: 'telegram-notifications'
 
 receivers:
 - name: 'telegram-notifications'
   telegram_configs:
-    # ИСПРАВЛЕНИЕ: Указываем путь к файлу с токеном ВНУТРИ контейнера
   - bot_token_file: '/etc/alertmanager/secrets/telegram_bot_token'
-    
-    # ID чата можно указать напрямую
+    # ИСПРАВЛЕНИЕ: Указываем ID чата как число, напрямую.
+    # Это единственный способ, который поймет Alertmanager.
     chat_id: -1002743466882
-    
-    # Используем HTML для форматирования сообщений
     parse_mode: 'HTML'
-    
-    # Улучшенный шаблон сообщения со ссылкой на Prometheus
     message: |
       {{ range .Alerts }}
       <b>{{ if eq .Status "firing" }}🔥 FIRING 🔥{{ else }}✅ RESOLVED ✅{{ end }}</b>
-      <b>Alert:</b> {{ .Labels.alertname }} ({{ .Labels.severity | toUpper }})
+      <b>Alert:</b> {{ .Labels.alertname }}
+      <b>Severity:</b> {{ .Labels.severity | toUpper }}
       <b>Description:</b> {{ .Annotations.description }}
-      <b>Details:</b>
-      {{ range .Labels.SortedPairs }} • <b>{{ .Name }}</b>: <code>{{ .Value }}</code>
-      {{ end }}<a href="{{ .GeneratorURL }}">GOTO: Prometheus Graph</a>
+      <a href="{{ .GeneratorURL }}">Prometheus Graph</a>
       {{ end }}
     send_resolved: true
