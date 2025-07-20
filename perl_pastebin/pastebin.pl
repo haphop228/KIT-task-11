@@ -25,11 +25,8 @@ close($lock_fh);
 tie my %pastes, 'DB_File', $db_path, O_RDWR|O_CREAT, 0644
   or die "Cannot open database file $db_path: $!";
 
-# ИСПРАВЛЕНИЕ 1: Загружаем плагин без неверной конфигурации
 plugin 'Prometheus';
 
-# ИСПРАВЛЕНИЕ 2: Получаем объект Net::Prometheus и регистрируем счетчик ОДИН РАЗ.
-# Мы сохраняем объект счетчика в переменную $db_requests_counter.
 my $db_requests_counter = app->prometheus->new_counter(
     name => 'db_requests_total',
     help => 'Total requests to the database file.',
@@ -38,6 +35,29 @@ my $db_requests_counter = app->prometheus->new_counter(
 # --- Маршруты (API) ---
 
 get '/' => 'index';
+
+# --- НОВЫЕ ТЕХНИЧЕСКИЕ РУЧКИ ---
+
+# Ручка a) Liveness Probe - проверка, что процесс приложения жив
+get '/healthz' => sub {
+    my $c = shift;
+    $c->render(text => 'OK', status => 200);
+};
+
+# Ручка b) Readiness Probe - проверка, что приложение готово принимать трафик
+get '/readyz' => sub {
+    my $c = shift;
+    # Проверяем, что мы можем получить доступ к файлу БД (через файл блокировки)
+    open(my $lock, '>>', $lock_file) or return $c->render(text => 'DB Unreachable', status => 503);
+    flock($lock, LOCK_SH) or return $c->render(text => 'DB Lock Failed', status => 503);
+    flock($lock, LOCK_UN);
+    close($lock);
+    
+    # Если все проверки прошли, отвечаем что готовы
+    $c->render(text => 'Ready', status => 200);
+};
+
+# --- Основная логика приложения ---
 
 post '/' => sub {
     my $c = shift;
@@ -55,7 +75,6 @@ post '/' => sub {
         created  => time(),
     };
 
-    # ИСПРАВЛЕНИЕ 3: Используем переменную-счетчик для инкремента
     $db_requests_counter->inc();
 
     open(my $lock, '>>', $lock_file) or die "Cannot open lock file: $!";
@@ -71,7 +90,6 @@ get '/paste/:id' => sub {
     my $c = shift;
     my $id = $c->param('id');
 
-    # ИСПРАВЛЕНИЕ 3: Используем ту же переменную-счетчик
     $db_requests_counter->inc();
 
     open(my $lock, '>>', $lock_file) or die "Cannot open lock file: $!";

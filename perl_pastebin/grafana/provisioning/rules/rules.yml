@@ -1,0 +1,59 @@
+apiVersion: 1
+
+groups:
+  - name: PastebinServiceAlerts
+    # Правила будут проверяться раз в 30 секунд
+    interval: 30s
+    rules:
+      - uid: high_latency_alert
+        title: High Request Latency (p99)
+        condition: B # Условие сработает, когда запрос 'B' вернет значение
+        # Здесь мы описываем запросы к Prometheus
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 120 # 2 минуты
+              to: 0
+            datasourceUid: '-100' # -100 означает "использовать источник по умолчанию"
+            model:
+              expr: 'sum(rate(http_request_duration_seconds_bucket{job="pastebin"}[2m])) by (le)'
+              intervalMs: 1000
+              legendFormat: ''
+              type: classic_conditions
+          - refId: B # Это условие и будет проверяться
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: '-100'
+            model:
+              # ВЫРАЖЕНИЕ: то же самое, что и раньше!
+              expr: 'histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="pastebin"}[2m])) by (le)) > 0.5'
+              intervalMs: 1000
+              legendFormat: ''
+              type: classic_conditions
+        # Алерт сработает, если условие истинно в течение 1 минуты
+        for: 1m
+        annotations:
+          summary: "p99 latency is above 500ms"
+        labels:
+          severity: 'critical'
+
+      - uid: high_db_rps_alert
+        title: High Database Load
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: '-100'
+            model:
+              expr: 'rate(db_requests_total{job="pastebin"}[1m]) > 100'
+              intervalMs: 1000
+              legendFormat: ''
+              type: classic_conditions
+        for: 30s
+        annotations:
+          summary: "Database RPS is over 100"
+        labels:
+          severity: 'warning'

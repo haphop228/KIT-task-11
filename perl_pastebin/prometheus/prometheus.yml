@@ -1,5 +1,5 @@
 global:
-  scrape_interval: 15s # Собирать метрики каждые 15 секунд
+  scrape_interval: 15s
 
 scrape_configs:
   - job_name: 'prometheus'
@@ -8,6 +8,4 @@ scrape_configs:
 
   - job_name: 'pastebin'
     static_configs:
-      # Мы используем 'pastebin:3000', потому что Docker Compose создает
-      # внутреннюю сеть, где сервисы видят друг друга по именам.
       - targets: ['pastebin:3000']
