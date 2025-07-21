@@ -1,8 +1,10 @@
 # --- Зависимости для работы приложения ---
 requires 'Mojolicious';
-requires 'DB_File';
 requires 'Digest::SHA';
-requires 'Storable';
 requires 'Time::HiRes';
-# --- Новая зависимость для метрик ---
+# УДАЛЯЕМ старую зависимость 'DB_File'
+# ДОБАВЛЯЕМ новый, удобный клиент для CouchDB
+requires 'Mojo::CouchDB';
+
+# --- Зависимость для метрик ---
 requires 'Mojolicious::Plugin::Prometheus';
