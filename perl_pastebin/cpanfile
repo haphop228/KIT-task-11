@@ -2,6 +2,7 @@
 requires 'Mojolicious';
 requires 'Digest::SHA';
 requires 'Time::HiRes';
+requires 'Data::Dumper';
 # УДАЛЯЕМ старую зависимость 'DB_File'
 # ДОБАВЛЯЕМ новый, удобный клиент для CouchDB
 requires 'Mojo::CouchDB';

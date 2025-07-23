@@ -6,6 +6,8 @@ use Mojolicious::Plugin::Config;
 use Mojo::CouchDB;
 use Digest::SHA qw(sha1_hex);
 use Time::HiRes qw(time sleep);
+# ИСПРАВЛЕНИЕ: Возвращаем модуль для кодирования
+use Encode qw(encode_utf8);
 
 # Конфигурация для Hypnotoad
 app->plugin('Config' => {
@@ -61,58 +63,43 @@ get '/' => 'index';
 
 get '/healthz' => sub { shift->render(text => 'OK') };
 
-get '/readyz' => sub {
-    my $c = shift;
-    $c->render_later;
-    $db->info_p->then( sub { $c->render(text => 'Ready') } )
-             ->catch( sub { $c->render(text => 'CouchDB Unreachable', status => 503) } );
-};
 
-# --- ИСПРАВЛЕНИЕ: ПЕРЕПИСЫВАЕМ НА СИНХРОННЫЙ КОД ---
 post '/' => sub {
     my $c = shift;
-    # Убираем render_later, так как операция будет синхронной
-    
+
     my $content = $c->param('content') || '';
     my $lang    = $c->param('language') || 'plaintext';
-    return $c->render(text => 'Content cannot be empty.', status => 400) if $content eq '';
-    
-    my $id = substr(sha1_hex($content . time . rand()), 0, 10);
-    
-    my $data_to_store = {
+    return $c->render(text => 'Content cannot be empty', status => 400) unless $content;
+
+    # ИСПРАВЛЕНИЕ: Кодируем строку в UTF-8 ПЕРЕД хэшированием
+    my $string_to_hash = encode_utf8($content . time . rand());
+    my $id = substr(sha1_hex($string_to_hash), 0, 10);
+
+    my $doc = {
         _id      => $id,
-        content  => $content,
+        content  => $content, # Здесь оставляем оригинальную строку
         language => lc($lang),
         created  => time(),
     };
-    
+
     $db_requests_counter->inc();
-    
-    # Вызываем СИНХРОННЫЙ метод save, как в документации
-    my $res = eval { $db->save($data_to_store) } || {};
-
-    if ($@ || !$res->{ok} || !$res->{id}) {
-        $c->app->log->error("Save failed: " . ($@ || $res->{reason} || 'Unknown error'));
-        return $c->render(text => 'Save failed', status => 500);
-    }
-
-    $c->redirect_to("/paste/" . $res->{id});
+    $db->save($doc);
+    $c->app->log->info("Fired save request for ID '$id'. Redirecting immediately.");
+    $c->redirect_to("/paste/" . $id);
 };
 
 get '/paste/:id' => sub {
     my $c = shift;
     my $id = $c->param('id');
-    $c->render_later;
+    
     $db_requests_counter->inc();
-    $db->get_p($id)->then(sub {
-        my $doc = shift;
-        return $c->render(template => 'not_found', status => 404) unless $doc;
-        $c->render('paste', paste => $doc);
-    })->catch(sub {
-        my $err = shift;
-        $c->app->log->error("CouchDB get error: $err");
-        $c->render(template => 'not_found', status => 404);
-    });
+    my $doc = eval { $db->get($id) };
+
+    if ($@ || !$doc) {
+        $c->app->log->warn("Document not found for ID '$id'. Error: $@") if $@;
+        return $c->render(template => 'not_found', status => 404);
+    }
+    $c->render('paste', paste => $doc);
 };
 
 app->start;

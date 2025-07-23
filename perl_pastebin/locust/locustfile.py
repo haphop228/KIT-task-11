@@ -24,11 +24,3 @@ class ReadOnlyUser(HttpUser):
     @task(1)
     def create_new_paste_occasionally(self):
         self.client.post("/", data={"language": "go", "content": "new paste"})
-
-# --- Сценарий 3: Нагрузка на технические ручки ---
-class HealthCheckUser(HttpUser):
-    wait_time = between(1, 3)
-    @task(3)
-    def check_health(self): self.client.get("/healthz")
-    @task(1)
-    def check_readiness(self): self.client.get("/readyz")
