@@ -29,6 +29,21 @@ services:
       timeout: 2s
       retries: 10
 
+  couchdb-exporter:
+    # ИЗМЕНЕНИЕ 1: Используем правильное имя образа
+    image: gesellix/couchdb-prometheus-exporter
+    ports:
+      - "9984:9984"
+    # ИЗМЕНЕНИЕ 2: Используем 'command' для явной передачи параметров
+    command:
+      # Параметр для подключения к вашей БД
+      - '--couchdb.uri=http://admin:password@couchdb:5984'
+      # Эта полезная опция заставит экспортер собирать метрики по ВСЕМ базам данных,
+      # включая вашу 'pastes', без необходимости указывать их имена вручную.
+      - '--databases=_all_dbs'
+    depends_on:
+      - couchdb
+      
   prometheus:
     image: prom/prometheus:latest
     ports:
