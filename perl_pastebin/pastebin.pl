@@ -5,7 +5,7 @@ use Mojolicious::Lite;
 use Mojolicious::Plugin::Config;
 use Mojo::CouchDB;
 use Digest::SHA qw(sha1_hex);
-use Time::HiRes qw(time);
+use Time::HiRes qw(time sleep);
 
 # Конфигурация для Hypnotoad
 app->plugin('Config' => {
@@ -18,28 +18,33 @@ app->plugin('Config' => {
   }
 });
 
-# --- ИСПРАВЛЕНИЕ: ПРАВИЛЬНАЯ ИНИЦИАЛИЗАЦИЯ СОЕДИНЕНИЯ ---
+# --- ПРАВИЛЬНАЯ ИНИЦИАЛИЗАЦИЯ СОЕДИНЕНИЯ ---
 my $couch_url_str = app->config->{couchdb_url} || $ENV{COUCHDB_URL};
 die "COUCHDB_URL is not set!" unless $couch_url_str;
 
-# 1. Парсим URL, чтобы извлечь из него компоненты
 my $url_obj = Mojo::URL->new($couch_url_str);
 my ($user, $pass) = split ':', $url_obj->userinfo || '';
-$url_obj->userinfo(undef); # Очищаем userinfo из самого URL
+$url_obj->userinfo(undef);
 
-# 2. Передаем URL, юзера и пароль как ТРИ отдельных аргумента, как в документации
 my $couch = Mojo::CouchDB->new($url_obj, $user, $pass);
 my $db = $couch->db('pastes');
 
 # --- Хук для автоматического создания БД при первом старте ---
 app->hook(before_server_start => sub {
-    app->log->info("Ensuring 'pastes' database exists...");
-    # 3. Используем простой и идемпотентный метод create_db
-    my $ok = $db->create_db;
-    die "Could not create or find database 'pastes'. Check CouchDB connection and credentials." unless $ok;
-    app->log->info("'pastes' database is ready.");
+    my $max_retries = 5;
+    my $retry_delay = 2;
+    for my $attempt (1..$max_retries) {
+        app->log->info("Ensuring 'pastes' database exists (attempt $attempt/$max_retries)...");
+        my $ok = $db->create_db;
+        if ($ok) {
+            app->log->info("'pastes' database is ready.");
+            return;
+        }
+        app->log->warn("Could not create/verify database. Retrying in $retry_delay seconds...");
+        sleep $retry_delay;
+    }
+    die "Failed to connect to and setup CouchDB after $max_retries attempts.";
 });
-
 
 # Настройка Prometheus
 app->plugin('Prometheus' => {
@@ -59,32 +64,39 @@ get '/healthz' => sub { shift->render(text => 'OK') };
 get '/readyz' => sub {
     my $c = shift;
     $c->render_later;
-    # Проверяем готовность, пытаясь получить информацию о самой БД
-    $db->info->then( sub { $c->render(text => 'Ready') } )
+    $db->info_p->then( sub { $c->render(text => 'Ready') } )
              ->catch( sub { $c->render(text => 'CouchDB Unreachable', status => 503) } );
 };
 
+# --- ИСПРАВЛЕНИЕ: ПЕРЕПИСЫВАЕМ НА СИНХРОННЫЙ КОД ---
 post '/' => sub {
     my $c = shift;
-    $c->render_later;
+    # Убираем render_later, так как операция будет синхронной
+    
     my $content = $c->param('content') || '';
     my $lang    = $c->param('language') || 'plaintext';
     return $c->render(text => 'Content cannot be empty.', status => 400) if $content eq '';
-    my $id = sha1_hex($content . time . rand());
+    
+    my $id = substr(sha1_hex($content . time . rand()), 0, 10);
+    
     my $data_to_store = {
-        _id      => substr($id, 0, 10),
+        _id      => $id,
         content  => $content,
         language => lc($lang),
         created  => time(),
     };
+    
     $db_requests_counter->inc();
-    $db->save_doc($data_to_store)->then(sub {
-        $c->redirect_to("/paste/" . $data_to_store->{_id});
-    })->catch(sub {
-        my $err = shift;
-        $c->app->log->error("CouchDB save error: $err");
-        $c->render(text => 'Failed to save paste', status => 500);
-    });
+    
+    # Вызываем СИНХРОННЫЙ метод save, как в документации
+    my $res = eval { $db->save($data_to_store) } || {};
+
+    if ($@ || !$res->{ok} || !$res->{id}) {
+        $c->app->log->error("Save failed: " . ($@ || $res->{reason} || 'Unknown error'));
+        return $c->render(text => 'Save failed', status => 500);
+    }
+
+    $c->redirect_to("/paste/" . $res->{id});
 };
 
 get '/paste/:id' => sub {
@@ -92,7 +104,7 @@ get '/paste/:id' => sub {
     my $id = $c->param('id');
     $c->render_later;
     $db_requests_counter->inc();
-    $db->get_doc($id)->then(sub {
+    $db->get_p($id)->then(sub {
         my $doc = shift;
         return $c->render(template => 'not_found', status => 404) unless $doc;
         $c->render('paste', paste => $doc);
