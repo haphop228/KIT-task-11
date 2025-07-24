@@ -3,23 +3,26 @@
   "editable": true, "gnetId": null, "graphTooltip": 0, "id": 2, "links": [],
   "panels": [
     { "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 }, "id": 2, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }, "targets": [ { "expr": "sum(rate(http_requests_total{job=\"pastebin\"}[2m]))", "legendFormat": "Total RPS", "refId": "A" } ], "title": "Requests Per Second (RPS)", "type": "timeseries" },
-    { "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 }, "id": 4, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "unit": "s" }, "targets": [ { "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))", "legendFormat": "p99 Latency", "refId": "A" } ], "title": "Request Latency (p99)", "type": "timeseries" },
-    { "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 }, "id": 8, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "unit": "cores" }, "targets": [ { "expr": "sum by (worker) (rate(process_cpu_seconds_total{job=\"pastebin\"}[2m]))", "legendFormat": "Worker {{worker}}", "refId": "A" } ], "title": "CPU Usage by Worker", "type": "timeseries" },
-    { "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 }, "id": 10, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "unit": "bytes" }, "targets": [ { "expr": "process_resident_memory_bytes{job=\"pastebin\"}", "legendFormat": "Worker {{worker}}", "refId": "A" } ], "title": "Memory Usage by Worker", "type": "timeseries" },
-    { "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 }, "id": 12, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }, "targets": [ { "expr": "process_open_fds{job=\"pastebin\"}", "legendFormat": "Worker {{worker}}", "refId": "A" } ], "title": "Open File Descriptors by Worker", "type": "timeseries" },
-    { "title": "CouchDB: RPS by HTTP Method", "type": "timeseries", "gridPos": { "h": 7, "w": 8, "x": 0, "y": 14 }, "id": 14, "targets": [
-        { "expr": "sum by (method) (deriv(couchdb_httpd_request_methods{job=\"couchdb\", method=~\"GET|POST\"}[5m]))", "legendFormat": "{{method}}", "refId": "A" }
-      ], "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } } },
-    { "title": "CouchDB: Response Status Codes", "type": "timeseries", "gridPos": { "h": 7, "w": 8, "x": 8, "y": 14 }, "id": 16,
-      "targets": [
-        { "expr": "sum(deriv(couchdb_httpd_status_codes{job=\"couchdb\", code=~\"2..\"}[5m]))", "legendFormat": "2xx", "refId": "A" },
-        { "expr": "sum(deriv(couchdb_httpd_status_codes{job=\"couchdb\", code=~\"3..\"}[5m]))", "legendFormat": "3xx", "refId": "B" },
-        { "expr": "sum(deriv(couchdb_httpd_status_codes{job=\"couchdb\", code=~\"4..\"}[5m]))", "legendFormat": "4xx", "refId": "C" },
-        { "expr": "sum(deriv(couchdb_httpd_status_codes{job=\"couchdb\", code=~\"5..\"}[5m]))", "legendFormat": "5xx", "refId": "D" }
-      ], "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } } },
-    { "title": "CouchDB: Document Count (pastes)", "type": "timeseries", "gridPos": { "h": 7, "w": 8, "x": 16, "y": 14 }, "id": 18, "targets": [
-        { "expr": "couchdb_database_doc_count{job=\"couchdb\", db_name=\"pastes\"}", "legendFormat": "Documents", "refId": "A" }
-      ], "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } } }
+    { "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 }, "id": 4, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "unit": "s" }, "targets": [ { "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))", "legendFormat": "p99 Service Time", "refId": "A" } ], "title": "Service Latency (p99)", "type": "timeseries" },
+    { "title": "Queue Latency (p99)", "type": "timeseries", "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 }, "id": 22,
+      "targets": [ {
+        "expr": "histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))",
+        "legendFormat": "p99 Queue Time", "refId": "A"
+      } ], "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "unit": "s" }
+    },
+    { "title": "Total Response Time (p99)", "type": "timeseries", "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 }, "id": 24,
+      "targets": [ {
+        "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le)) + histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))",
+        "legendFormat": "p99 Total Time (Service + Queue)", "refId": "A"
+      } ], "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "unit": "s" }
+    },
+    { "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 }, "id": 6, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }, "targets": [ { "expr": "sum(rate(db_requests_total{job=\"pastebin\"}[2m]))", "legendFormat": "DB RPS", "refId": "A" } ], "title": "Database Operations (RPS)", "type": "timeseries" },
+    { "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 }, "id": 8, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "unit": "cores" }, "targets": [ { "expr": "sum by (worker) (rate(process_cpu_seconds_total{job=\"pastebin\"}[2m]))", "legendFormat": "Worker {{worker}}", "refId": "A" } ], "title": "CPU Usage by Worker", "type": "timeseries" },
+    { "title": "CouchDB: RPS by HTTP Method", "type": "timeseries", "gridPos": { "h": 7, "w": 8, "x": 0, "y": 14 }, "id": 14, "targets": [ { "expr": "sum by (method) (deriv(couchdb_httpd_request_methods{job=\"couchdb\", method=~\"GET|POST\"}[5m]))", "legendFormat": "{{method}}", "refId": "A" } ], "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } } },
+    { "title": "CouchDB: Response Status Codes", "type": "timeseries", "gridPos": { "h": 7, "w": 8, "x": 8, "y": 14 }, "id": 16, "targets": [ { "expr": "sum(deriv(couchdb_httpd_status_codes{job=\"couchdb\", code=~\"2..\"}[5m]))", "legendFormat": "2xx", "refId": "A" }, { "expr": "sum(deriv(couchdb_httpd_status_codes{job=\"couchdb\", code=~\"3..\"}[5m]))", "legendFormat": "3xx", "refId": "B" }, { "expr": "sum(deriv(couchdb_httpd_status_codes{job=\"couchdb\", code=~\"4..\"}[5m]))", "legendFormat": "4xx", "refId": "C" }, { "expr": "sum(deriv(couchdb_httpd_status_codes{job=\"couchdb\", code=~\"5..\"}[5m]))", "legendFormat": "5xx", "refId": "D" } ], "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } } },
+    { "title": "CouchDB: Document Count (pastes)", "type": "timeseries", "gridPos": { "h": 7, "w": 8, "x": 16, "y": 14 }, "id": 18, "targets": [ { "expr": "couchdb_database_doc_count{job=\"couchdb\", db_name=\"pastes\"}", "legendFormat": "Documents", "refId": "A" } ], "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } } },
+    { "gridPos": { "h": 7, "w": 8, "x": 0, "y": 21 }, "id": 10, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "unit": "bytes" }, "targets": [ { "expr": "process_resident_memory_bytes{job=\"pastebin\"}", "legendFormat": "Worker {{worker}}", "refId": "A" } ], "title": "Memory Usage by Worker", "type": "timeseries" },
+    { "gridPos": { "h": 7, "w": 8, "x": 8, "y": 21 }, "id": 12, "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }, "targets": [ { "expr": "process_open_fds{job=\"pastebin\"}", "legendFormat": "Worker {{worker}}", "refId": "A" } ], "title": "Open File Descriptors by Worker", "type": "timeseries" }
   ],
-  "schemaVersion": 36, "style": "dark", "tags": [], "templating": { "list": [] }, "time": { "from": "now-15m", "to": "now" }, "timepicker": {}, "timezone": "", "title": "Pastebin Service", "uid": "c9e4a42b-2856-46c5-9610-6f092e071c6d", "version": 8
+  "schemaVersion": 36, "style": "dark", "tags": [], "templating": { "list": [] }, "time": { "from": "now-15m", "to": "now" }, "timepicker": {}, "timezone": "", "title": "Pastebin Service", "uid": "c9e4a42b-2856-46c5-9610-6f092e071c6d", "version": 12
 }

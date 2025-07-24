@@ -2,23 +2,31 @@ groups:
 - name: pastebin-service-alerts
   rules:
   
-  # Правило 1: Высокая задержка p99
+  # ПРАВИЛО 1: Высокая СУММАРНАЯ задержка p99 (Очередь + Обработка)
   - alert: HighRequestLatency
-    # Выражение на языке PromQL. Срабатывает, если p99 latency > 0.5 секунды
-    expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="pastebin"}[2m])) by (le)) > 0.5
-    # Условие должно выполняться в течение 1 минуты, чтобы алерт сработал (для защиты от ложных всплесков)
+    # ВЫРАЖЕНИЕ: p99(время обработки) + p99(время в очереди) > 0.5 секунды
+    expr: >
+      (
+        histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="pastebin"}[2m])) by (le))
+        +
+        histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job="pastebin"}[2m])) by (le))
+      ) > 0.5
+    
+    # Условие должно выполняться в течение 1 минуты
     for: 1m
+    
     labels:
       severity: 'critical'
-    # Аннотации - это текст, который увидит пользователь в уведомлении
+      
+    # АННОТАЦИИ: Обновленный текст для Telegram
     annotations:
-      summary: "High Request Latency on Pastebin"
-      description: "p99 latency is {{ $value | printf \"%.2fs\" }}, which is above the 500ms threshold."
+      summary: "High Total Request Latency on Pastebin"
+      description: "Total p99 latency (service + queue) is {{ $value | printf \"%.2fs\" }}, which is above the 500ms threshold."
 
-  # Правило 2: Высокий RPS к базе данных
+  # ПРАВИЛО 2: Высокий RPS к базе данных (остается без изменений)
   - alert: HighDatabaseRPS
     # Срабатывает, если скорость запросов к БД > 100 в секунду
-    expr: rate(db_requests_total{job="pastebin"}[1m]) > 100
+    expr: sum(rate(db_requests_total{job="pastebin"}[1m])) > 100
     # Условие должно выполняться 30 секунд
     for: 30s
     labels:

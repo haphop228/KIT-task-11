@@ -6,21 +6,21 @@ use Mojolicious::Plugin::Config;
 use Mojo::CouchDB;
 use Digest::SHA qw(sha1_hex);
 use Time::HiRes qw(time sleep);
-# ИСПРАВЛЕНИЕ: Возвращаем модуль для кодирования
 use Encode qw(encode_utf8);
+use Mojo::JSON qw(encode_json);
 
-# Конфигурация для Hypnotoad
+# --- ОКОНЧАТЕЛЬНАЯ КОНФИГУРАЦИЯ СЕРВЕРА ---
 app->plugin('Config' => {
   default => {
     hypnotoad => {
       listen  => ['http://*:3000'],
-      workers => 10,
+      workers => 1,
       pid_file => '/tmp/pastebin.pid'
     }
   }
 });
 
-# --- ПРАВИЛЬНАЯ ИНИЦИАЛИЗАЦИЯ СОЕДИНЕНИЯ ---
+# --- ИНИЦИАЛИЗАЦИЯ СОЕДИНЕНИЯ ---
 my $couch_url_str = app->config->{couchdb_url} || $ENV{COUCHDB_URL};
 die "COUCHDB_URL is not set!" unless $couch_url_str;
 
@@ -31,7 +31,7 @@ $url_obj->userinfo(undef);
 my $couch = Mojo::CouchDB->new($url_obj, $user, $pass);
 my $db = $couch->db('pastes');
 
-# --- Хук для автоматического создания БД при первом старте ---
+# --- Хук для автоматического создания БД ---
 app->hook(before_server_start => sub {
     my $max_retries = 5;
     my $retry_delay = 2;
@@ -48,42 +48,69 @@ app->hook(before_server_start => sub {
     die "Failed to connect to and setup CouchDB after $max_retries attempts.";
 });
 
-# Настройка Prometheus
+# --- НАСТРОЙКА PROMETHEUS ---
+# --- Настройка Prometheus ---
 app->plugin('Prometheus' => {
-  duration_buckets => [ 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1 ],
+  duration_buckets => [ 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5 ],
 });
 my $db_requests_counter = app->prometheus->new_counter(
     name => 'db_requests_total',
     help => 'Total requests to the CouchDB.',
 );
+my $queue_duration_histogram = app->prometheus->new_histogram(
+    name    => 'http_request_queue_duration_seconds',
+    help    => 'Time the request spent in the queue before being processed.',
+    buckets => [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+);
+
+# --- ХУК ДЛЯ ИЗМЕРЕНИЯ ВРЕМЕНИ В ОЧЕРЕДИ ---
+# Этот код выполняется для каждого запроса до того, как сработает основной маршрут.
+app->hook(around_dispatch => sub {
+    my ($next, $c) = @_;
+    if (my $start_header = $c->req->headers->header('X-Request-Start')) {
+        if ($start_header =~ s/^t=//) {
+            my $now = Time::HiRes::time();
+            my $queue_time = $now - $start_header;
+            $queue_duration_histogram->observe($queue_time) if $queue_time > 0;
+        }
+    }
+    return $next->();
+});
+
 
 # --- Маршруты (API) ---
-
 get '/' => 'index';
 
 get '/healthz' => sub { shift->render(text => 'OK') };
 
+get '/readyz' => sub {
+    my $c = shift;
+    eval { $couch->info };
+    if ($@) {
+        $c->app->log->error("Readiness check failed: $@");
+        return $c->render(text => 'CouchDB Unreachable', status => 503);
+    }
+    return $c->render(text => 'Ready');
+};
 
 post '/' => sub {
     my $c = shift;
-
     my $content = $c->param('content') || '';
     my $lang    = $c->param('language') || 'plaintext';
     return $c->render(text => 'Content cannot be empty', status => 400) unless $content;
 
-    # ИСПРАВЛЕНИЕ: Кодируем строку в UTF-8 ПЕРЕД хэшированием
     my $string_to_hash = encode_utf8($content . time . rand());
     my $id = substr(sha1_hex($string_to_hash), 0, 10);
 
     my $doc = {
         _id      => $id,
-        content  => $content, # Здесь оставляем оригинальную строку
+        content  => $content,
         language => lc($lang),
         created  => time(),
     };
 
     $db_requests_counter->inc();
-    $db->save($doc);
+        $db->save($doc);
     $c->app->log->info("Fired save request for ID '$id'. Redirecting immediately.");
     $c->redirect_to("/paste/" . $id);
 };
@@ -105,6 +132,7 @@ get '/paste/:id' => sub {
 app->start;
 
 __DATA__
+
 
 @@ index.html.ep
 % layout 'default';
