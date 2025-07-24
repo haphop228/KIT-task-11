@@ -9,6 +9,9 @@ use Time::HiRes qw(time sleep);
 use Encode qw(encode_utf8);
 use Mojo::JSON qw(encode_json);
 
+# ВАЖНО: Мы больше НЕ инициализируем OpenTelemetry вручную здесь.
+# Плагин сделает это за нас.
+
 our $db_initialized = 0;
 
 # --- ОКОНЧАТЕЛЬНАЯ КОНФИГУРАЦИЯ СЕРВЕРА ---
@@ -25,44 +28,31 @@ app->plugin('Config' => {
 # --- ИНИЦИАЛИЗАЦИЯ СОЕДИНЕНИЯ ---
 my $couch_url_str = app->config->{couchdb_url} || $ENV{COUCHDB_URL};
 die "COUCHDB_URL is not set!" unless $couch_url_str;
-
 my $url_obj = Mojo::URL->new($couch_url_str);
 my ($user, $pass) = split ':', $url_obj->userinfo || '';
 $url_obj->userinfo(undef);
-
 my $couch = Mojo::CouchDB->new($url_obj, $user, $pass);
 my $db = $couch->db('pastes');
 
 # --- Хук для автоматического создания БД ---
 app->hook(before_server_start => sub {
-    # Выполняем этот блок кода только один раз, даже если хук вызывают повторно
     return if $db_initialized++;
-
     my $max_retries = 5;
     my $retry_delay = 2;
     for my $attempt (1..$max_retries) {
         app->log->info("Ensuring 'pastes' database exists (attempt $attempt/$max_retries)...");
-        
-        # Пытаемся создать БД и ловим ЛЮБУЮ фатальную ошибку
         eval { $db->create_db };
-
-        # Сценарий 1: Ошибки не было - значит, БД успешно создана.
         if (!$@) {
             app->log->info("'pastes' database created successfully.");
-            return; # Успех
+            return;
         }
-        
-        # Сценарий 2: Ошибка была, но это ошибка "file_exists" - это тоже успех.
         if ($@ =~ /file_exists/) {
             app->log->info("'pastes' database already exists.");
-            return; # Успех
+            return;
         }
-
-        # Сценарий 3: Любая другая ошибка (сеть, права и т.д.) - повторяем.
         app->log->warn("Could not create/verify database (Error: $@). Retrying in $retry_delay seconds...");
         sleep $retry_delay;
     }
-    
     die "Failed to connect to and setup CouchDB after $max_retries attempts.";
 });
 
@@ -80,8 +70,17 @@ my $queue_duration_histogram = app->prometheus->new_histogram(
     buckets => [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
 );
 
+# --- ПРАВИЛЬНОЕ ПОДКЛЮЧЕНИЕ ПЛАГИНА OpenTelemetry ---
+# Вся конфигурация передается прямо сюда.
+app->plugin('OpenTelemetry' => {
+    service_name => 'pastebin-service',
+    exporter => {
+        module   => 'OTLP',
+        endpoint => 'http://jaeger:4318/v1/traces',
+    }
+});
+
 # --- ХУК ДЛЯ ИЗМЕРЕНИЯ ВРЕМЕНИ В ОЧЕРЕДИ ---
-# Этот код выполняется для каждого запроса до того, как сработает основной маршрут.
 app->hook(around_dispatch => sub {
     my ($next, $c) = @_;
     if (my $start_header = $c->req->headers->header('X-Request-Start')) {
@@ -95,9 +94,6 @@ app->hook(around_dispatch => sub {
 });
 
 # --- ХУК ДЛЯ РЕШЕНИЯ ПРОБЛЕМЫ CORS ---
-# Этот код будет добавлять разрешающий заголовок ко всем ответам.
-# Это позволит Swagger UI, загруженному с другого порта,
-# успешно запрашивать наш openapi.json.
 app->hook(after_dispatch => sub {
     my $c = shift;
     $c->res->headers->header('Access-Control-Allow-Origin' => '*');
@@ -105,9 +101,7 @@ app->hook(after_dispatch => sub {
 
 # --- Маршруты (API) ---
 get '/' => 'index';
-
 get '/healthz' => sub { shift->render(text => 'OK') };
-
 get '/readyz' => sub {
     my $c = shift;
     eval { $couch->info };
@@ -123,29 +117,59 @@ post '/' => sub {
     my $content = $c->param('content') || '';
     my $lang    = $c->param('language') || 'plaintext';
     return $c->render(text => 'Content cannot be empty', status => 400) unless $content;
-
     my $string_to_hash = encode_utf8($content . time . rand());
     my $id = substr(sha1_hex($string_to_hash), 0, 10);
-
-    my $doc = {
-        _id      => $id,
-        content  => $content,
-        language => lc($lang),
-        created  => time(),
-    };
-
+    my $doc = { _id => $id, content => $content, language => lc($lang), created => time() };
     $db_requests_counter->inc();
-        $db->save($doc);
-    $c->app->log->info("Fired save request for ID '$id'. Redirecting immediately.");
-    $c->redirect_to("/paste/" . $id);
+    my $res;
+
+    # --- ПРАВИЛЬНОЕ ПОЛУЧЕНИЕ ТРЕЙСЕРА ---
+    my $tracer = $c->app->opentelemetry->get_tracer;
+    my $span = $tracer->start_span('CouchDB SAVE');
+    $span->set_attribute('db.system', 'couchdb');
+    $span->set_attribute('db.name', 'pastes');
+    $span->set_attribute('doc.id', $id);
+
+    eval { $res = $db->save($doc); };
+
+    if ($@) {
+        $span->record_exception($@);
+        $span->set_status('error', 'Database save failed');
+    }
+    $span->end_span;
+
+    if ($@) {
+        $c->app->log->error("CouchDB save failed with a fatal error: $@");
+        return $c->render(text => 'Failed to save paste due to a critical error', status => 500);
+    }
+    if ($res && ($res->{id} || $res->{ok})) {
+        $c->redirect_to("/paste/" . ($res->{id} || $id));
+    } else {
+        $c->app->log->error("Failed to save paste. Response: " . Mojo::JSON::encode_json($res));
+        $c->render(text => 'Failed to save paste (invalid response)', status => 500);
+    }
 };
 
 get '/paste/:id' => sub {
     my $c = shift;
     my $id = $c->param('id');
-    
     $db_requests_counter->inc();
-    my $doc = eval { $db->get($id) };
+    my $doc;
+
+    # --- ПРАВИЛЬНОЕ ПОЛУЧЕНИЕ ТРЕЙСЕРА ---
+    my $tracer = $c->app->opentelemetry->get_tracer;
+    my $span = $tracer->start_span('CouchDB GET');
+    $span->set_attribute('db.system', 'couchdb');
+    $span->set_attribute('db.name', 'pastes');
+    $span->set_attribute('doc.id', $id);
+
+    eval { $doc = $db->get($id) };
+
+    if ($@) {
+        $span->record_exception($@);
+        $span->set_status('error', 'Database get failed');
+    }
+    $span->end_span;
 
     if ($@ || !$doc) {
         $c->app->log->warn("Document not found for ID '$id'. Error: $@") if $@;
@@ -153,16 +177,16 @@ get '/paste/:id' => sub {
     }
     $c->render('paste', paste => $doc);
 };
-
 app->start;
 
 __DATA__
+
+# ... (вся секция __DATA__ без изменений) ...
 
 
 @@ index.html.ep
 % layout 'default';
 % title 'Create New Paste';
-
 <h1>Create a New Paste</h1>
 <form action="/" method="POST">
   <figure>
@@ -195,7 +219,6 @@ __DATA__
     <button type="submit">Create Paste</button>
   </div>
 </form>
-
 @@ not_found.html.ep
 % layout 'default';
 % title 'Not Found';
@@ -204,7 +227,6 @@ __DATA__
   <p>The paste you are looking for does not exist or has been deleted.</p>
   <a href="/" role="button">Create a New Paste</a>
 </div>
-
 @@ paste.html.ep
 % layout 'default';
 % title 'View Paste';
@@ -217,7 +239,6 @@ __DATA__
   <script src="/js/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
 <% end %>
-
 @@ layouts/default.html.ep
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">

@@ -109,6 +109,17 @@ services:
       - URL=http://localhost:3000/openapi.json
     depends_on:
       - pastebin
+  
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      # Порт для UI
+      - "16686:16686"
+      # Порт для приема трейсов по протоколу OTLP/HTTP
+      - "4318:4318"
+    environment:
+      # Включаем приемник OTLP
+      - COLLECTOR_OTLP_ENABLED=true
 
 volumes:
   prometheus_data: {}
