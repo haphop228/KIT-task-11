@@ -1,0 +1,161 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Pastebin Service API",
+    "description": "A simple API for creating and viewing text pastes. This documentation allows you to interact with the API directly.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "summary": "Create a new paste",
+        "description": "Accepts form-encoded data to create a new paste. The server generates a unique ID, saves the content to the database, and redirects the client to the URL of the new paste.",
+        "tags": ["Pastes"],
+        "requestBody": {
+          "required": true,
+          "description": "The content and language of the paste.",
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "The text content of the paste.",
+                    "example": "sub main {\n  print \"Hello, World!\\n\";\n}"
+                  },
+                  "language": {
+                    "type": "string",
+                    "description": "The syntax language for highlighting.",
+                    "default": "plaintext",
+                    "example": "perl"
+                  }
+                },
+                "required": ["content"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Success. Redirects to the newly created paste.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The URL of the new paste, e.g., /paste/abcdef1234"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request. The 'content' field was missing or empty."
+          },
+          "500": {
+            "description": "Internal Server Error. Could not save the paste, likely due to a database connection issue or an unexpected database response."
+          }
+        }
+      }
+    },
+    "/paste/{id}": {
+      "get": {
+        "summary": "View a paste",
+        "description": "Retrieves and displays a paste by its unique ID. The response is an HTML page with syntax highlighting.",
+        "tags": ["Pastes"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The unique 10-character ID of the paste.",
+            "schema": {
+              "type": "string",
+              "example": "a1b2c3d4e5"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success. Returns the HTML page for the paste.",
+            "content": {
+              "text/html": {}
+            }
+          },
+          "404": {
+            "description": "Not Found. A paste with the specified ID does not exist."
+          },
+          "500": {
+            "description": "Internal Server Error. Could not retrieve the paste, likely due to a database connection issue."
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "summary": "Liveness Probe",
+        "description": "A simple liveness probe. This endpoint *always* returns a 200 OK with the text 'OK' as long as the application process is running, regardless of database connectivity. It is used to indicate that the container itself is alive.",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "The service process is running.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "OK"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "summary": "Readiness Probe",
+        "description": "A readiness probe. This endpoint checks if the application can connect to its downstream dependencies (the CouchDB database). It should be used by orchestrators to determine if the service is ready to accept traffic.",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "Service is ready to accept traffic.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Ready"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable. The application cannot establish a connection with the database.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "CouchDB Unreachable"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Pastes",
+      "description": "Core functionality for creating and viewing pastes."
+    },
+    {
+      "name": "Health",
+      "description": "Endpoints for monitoring service health and readiness."
+    }
+  ]
+}

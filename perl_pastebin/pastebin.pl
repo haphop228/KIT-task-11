@@ -9,6 +9,8 @@ use Time::HiRes qw(time sleep);
 use Encode qw(encode_utf8);
 use Mojo::JSON qw(encode_json);
 
+our $db_initialized = 0;
+
 # --- ОКОНЧАТЕЛЬНАЯ КОНФИГУРАЦИЯ СЕРВЕРА ---
 app->plugin('Config' => {
   default => {
@@ -33,23 +35,38 @@ my $db = $couch->db('pastes');
 
 # --- Хук для автоматического создания БД ---
 app->hook(before_server_start => sub {
+    # Выполняем этот блок кода только один раз, даже если хук вызывают повторно
+    return if $db_initialized++;
+
     my $max_retries = 5;
     my $retry_delay = 2;
     for my $attempt (1..$max_retries) {
         app->log->info("Ensuring 'pastes' database exists (attempt $attempt/$max_retries)...");
-        my $ok = $db->create_db;
-        if ($ok) {
-            app->log->info("'pastes' database is ready.");
-            return;
+        
+        # Пытаемся создать БД и ловим ЛЮБУЮ фатальную ошибку
+        eval { $db->create_db };
+
+        # Сценарий 1: Ошибки не было - значит, БД успешно создана.
+        if (!$@) {
+            app->log->info("'pastes' database created successfully.");
+            return; # Успех
         }
-        app->log->warn("Could not create/verify database. Retrying in $retry_delay seconds...");
+        
+        # Сценарий 2: Ошибка была, но это ошибка "file_exists" - это тоже успех.
+        if ($@ =~ /file_exists/) {
+            app->log->info("'pastes' database already exists.");
+            return; # Успех
+        }
+
+        # Сценарий 3: Любая другая ошибка (сеть, права и т.д.) - повторяем.
+        app->log->warn("Could not create/verify database (Error: $@). Retrying in $retry_delay seconds...");
         sleep $retry_delay;
     }
+    
     die "Failed to connect to and setup CouchDB after $max_retries attempts.";
 });
 
 # --- НАСТРОЙКА PROMETHEUS ---
-# --- Настройка Prometheus ---
 app->plugin('Prometheus' => {
   duration_buckets => [ 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5 ],
 });
@@ -77,6 +94,14 @@ app->hook(around_dispatch => sub {
     return $next->();
 });
 
+# --- ХУК ДЛЯ РЕШЕНИЯ ПРОБЛЕМЫ CORS ---
+# Этот код будет добавлять разрешающий заголовок ко всем ответам.
+# Это позволит Swagger UI, загруженному с другого порта,
+# успешно запрашивать наш openapi.json.
+app->hook(after_dispatch => sub {
+    my $c = shift;
+    $c->res->headers->header('Access-Control-Allow-Origin' => '*');
+});
 
 # --- Маршруты (API) ---
 get '/' => 'index';

@@ -1,11 +1,8 @@
-# --- Зависимости для работы приложения ---
+# cpanfile
 requires 'Mojolicious';
 requires 'Digest::SHA';
 requires 'Time::HiRes';
 requires 'Data::Dumper';
-# УДАЛЯЕМ старую зависимость 'DB_File'
-# ДОБАВЛЯЕМ новый, удобный клиент для CouchDB
 requires 'Mojo::CouchDB';
-
-# --- Зависимость для метрик ---
+requires 'Mojolicious::Plugin::Config';
 requires 'Mojolicious::Plugin::Prometheus';
