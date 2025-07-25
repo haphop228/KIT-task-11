@@ -1,0 +1,11 @@
+# docker-compose.override.yml
+# --- ФИНАЛЬНАЯ КОНФИГУРАЦИЯ (С ОТКЛЮЧЕННЫМ СЖАТИЕМ) ---
+
+services:
+  pastebin:
+    command: ["perl", "-d:NYTProf", "pastebin.pl", "daemon"]
+    environment:
+      # Добавляем опцию compress=0, чтобы файлы были не сжатыми
+      - NYTPROF=addpid=1:compress=0:file=/app/profiling_results/nytprof.out
+    volumes:
+      - ./profiling_results:/app/profiling_results

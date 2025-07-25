@@ -8,6 +8,8 @@ use Digest::SHA qw(sha1_hex);
 use Time::HiRes qw(time sleep);
 use Encode qw(encode_utf8);
 use Mojo::JSON qw(encode_json);
+use Text::Markdown::Discount qw(markdown); # ИСПОЛЬЗУЕМ НОВЫЙ МОДУЛЬ
+use Path::Tiny; # Уже должен быть установлен как зависимость Mojolicious
 
 our $db_initialized = 0;
 
@@ -21,6 +23,20 @@ app->plugin('Config' => {
     }
   }
 });
+
+# --- ИСКУССТВЕННАЯ ПРОБЛЕМА ДЛЯ ДЕМОНСТРАЦИИ ПРОФИЛИРОВЩИКА ---
+# Эта функция имитирует сложный, ресурсоемкий алгоритм,
+# который замедляет работу приложения.
+sub create_artificial_delay {
+    my $iterations = 20000; # Подберите значение, чтобы задержка была заметной (0.5-1 сек)
+    my $value = 1;
+    for my $i (1..$iterations) {
+        for my $j (1..50) {
+            $value += sqrt($i * $j);
+        }
+    }
+    return $value;
+}
 
 # --- ИНИЦИАЛИЗАЦИЯ СОЕДИНЕНИЯ ---
 my $couch_url_str = app->config->{couchdb_url} || $ENV{COUCHDB_URL};
@@ -124,6 +140,10 @@ post '/' => sub {
     my $lang    = $c->param('language') || 'plaintext';
     return $c->render(text => 'Content cannot be empty', status => 400) unless $content;
 
+
+    create_artificial_delay();
+
+
     my $string_to_hash = encode_utf8($content . time . rand());
     my $id = substr(sha1_hex($string_to_hash), 0, 10);
 
@@ -152,6 +172,26 @@ get '/paste/:id' => sub {
         return $c->render(template => 'not_found', status => 404);
     }
     $c->render('paste', paste => $doc);
+};
+
+
+get '/docs' => sub {
+    my $c = shift;
+
+    # Эта часть остается без изменений
+    my $readme_content = eval { path('README.md')->slurp_utf8 };
+    if ($@ || !$readme_content) {
+        return $c->render(text => 'README.md not found.', status => 404);
+    }
+    my $html = markdown($readme_content);
+
+    # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+    # Вместо того чтобы отдавать текст, мы рендерим наш новый шаблон 'docs'
+    # и передаем в него наш сгенерированный HTML в переменной 'docs_content'.
+    return $c->render(
+        template     => 'docs',
+        docs_content => $html
+    );
 };
 
 app->start;

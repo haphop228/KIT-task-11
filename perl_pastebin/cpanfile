@@ -15,3 +15,6 @@ requires 'Mojolicious::Plugin::Prometheus';
 # Указываем только то, что нам действительно нужно. Остальное - детали реализации.
 requires 'Mojolicious::Plugin::OpenTelemetry';
 requires 'OpenTelemetry::Exporter::OTLP';
+requires 'Devel::NYTProf';
+requires 'Text::Markdown'; # Для отображения README в браузере
+requires 'Text::Markdown::Discount'; # Более мощный парсер с поддержкой таблиц

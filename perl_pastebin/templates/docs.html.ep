@@ -1,0 +1,6 @@
+%# templates/docs.html.ep
+%
+% layout 'default';
+% title 'Documentation';
+%
+%== $docs_content

@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1027pt" height="656pt" viewBox="0.00 0.00 1026.94 656.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 652)">
+<title>Architecture</title>
+<polygon fill="#1e1e1e" stroke="none" points="-4,4 -4,-652 1022.94,-652 1022.94,4 -4,4"/>
+<text text-anchor="middle" x="509.47" y="-626" font-family="Helvetica,sans-Serif" font-size="20.00" fill="#ffffff">Архитектура Pastebin и Observability</text>
+<g id="clust1" class="cluster">
+<title>cluster_ui</title>
+<path fill="#1e1e1e" stroke="#444444" d="M20,-194C20,-194 300.35,-194 300.35,-194 306.35,-194 312.35,-200 312.35,-206 312.35,-206 312.35,-548 312.35,-548 312.35,-554 306.35,-560 300.35,-560 300.35,-560 20,-560 20,-560 14,-560 8,-554 8,-548 8,-548 8,-206 8,-206 8,-200 14,-194 20,-194"/>
+<text text-anchor="middle" x="160.17" y="-538" font-family="Helvetica,sans-Serif" font-size="20.00" fill="#ffffff">UI / Пользователь</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_app</title>
+<path fill="#1e1e1e" stroke="#444444" d="M463.7,-485C463.7,-485 990.03,-485 990.03,-485 996.03,-485 1002.03,-491 1002.03,-497 1002.03,-497 1002.03,-596 1002.03,-596 1002.03,-602 996.03,-608 990.03,-608 990.03,-608 463.7,-608 463.7,-608 457.7,-608 451.7,-602 451.7,-596 451.7,-596 451.7,-497 451.7,-497 451.7,-491 457.7,-485 463.7,-485"/>
+<text text-anchor="middle" x="726.86" y="-586" font-family="Helvetica,sans-Serif" font-size="20.00" fill="#ffffff">Приложение</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_obs</title>
+<path fill="#1e1e1e" stroke="#444444" d="M450.35,-80C450.35,-80 998.94,-80 998.94,-80 1004.94,-80 1010.94,-86 1010.94,-92 1010.94,-92 1010.94,-246 1010.94,-246 1010.94,-252 1004.94,-258 998.94,-258 998.94,-258 450.35,-258 450.35,-258 444.35,-258 438.35,-252 438.35,-246 438.35,-246 438.35,-92 438.35,-92 438.35,-86 444.35,-80 450.35,-80"/>
+<text text-anchor="middle" x="724.64" y="-236" font-family="Helvetica,sans-Serif" font-size="20.00" fill="#ffffff">Observability</text>
+</g>
+<!-- User -->
+<g id="node1" class="node">
+<title>User</title>
+<ellipse fill="#b8860b" stroke="#444444" cx="77.33" cy="-351" rx="61.33" ry="61.33"/>
+<text text-anchor="middle" x="77.33" y="-347.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">Пользователь</text>
+</g>
+<!-- Locust -->
+<g id="node2" class="node">
+<title>Locust</title>
+<path fill="#3a4a5a" stroke="#444444" d="M286.34,-520C286.34,-520 243.65,-520 243.65,-520 237.65,-520 231.65,-514 231.65,-508 231.65,-508 231.65,-496 231.65,-496 231.65,-490 237.65,-484 243.65,-484 243.65,-484 286.34,-484 286.34,-484 292.34,-484 298.34,-490 298.34,-496 298.34,-496 298.34,-508 298.34,-508 298.34,-514 292.34,-520 286.34,-520"/>
+<text text-anchor="middle" x="265" y="-498.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Locust UI</text>
+</g>
+<!-- User&#45;&gt;Locust -->
+<g id="edge14" class="edge">
+<title>User-&gt;Locust</title>
+<path fill="none" stroke="#bbbbbb" d="M125.66,-389.49C159.35,-416.89 203.66,-452.93 232.95,-476.75"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="230.38,-479.17 240.35,-482.77 234.8,-473.74 230.38,-479.17"/>
+</g>
+<!-- Grafana -->
+<g id="node3" class="node">
+<title>Grafana</title>
+<path fill="#3a4a5a" stroke="#444444" d="M282.68,-238C282.68,-238 247.32,-238 247.32,-238 241.32,-238 235.32,-232 235.32,-226 235.32,-226 235.32,-214 235.32,-214 235.32,-208 241.32,-202 247.32,-202 247.32,-202 282.68,-202 282.68,-202 288.68,-202 294.68,-208 294.68,-214 294.68,-214 294.68,-226 294.68,-226 294.68,-232 288.68,-238 282.68,-238"/>
+<text text-anchor="middle" x="265" y="-216.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Grafana</text>
+</g>
+<!-- User&#45;&gt;Grafana -->
+<g id="edge13" class="edge">
+<title>User-&gt;Grafana</title>
+<path fill="none" stroke="#bbbbbb" d="M128.08,-315.89C159.83,-293.49 200.22,-265 228.7,-244.91"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="230.47,-247.94 236.63,-239.31 226.44,-242.22 230.47,-247.94"/>
+</g>
+<!-- Swagger -->
+<g id="node4" class="node">
+<title>Swagger</title>
+<path fill="#3a4a5a" stroke="#444444" d="M292.35,-426C292.35,-426 237.65,-426 237.65,-426 231.65,-426 225.65,-420 225.65,-414 225.65,-414 225.65,-402 225.65,-402 225.65,-396 231.65,-390 237.65,-390 237.65,-390 292.35,-390 292.35,-390 298.35,-390 304.35,-396 304.35,-402 304.35,-402 304.35,-414 304.35,-414 304.35,-420 298.35,-426 292.35,-426"/>
+<text text-anchor="middle" x="265" y="-404.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Swagger UI</text>
+</g>
+<!-- User&#45;&gt;Swagger -->
+<g id="edge15" class="edge">
+<title>User-&gt;Swagger</title>
+<path fill="none" stroke="#bbbbbb" d="M136.31,-368.8C161.29,-376.47 190.22,-385.35 214.21,-392.72"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="213.18,-396.06 223.76,-395.65 215.23,-389.37 213.18,-396.06"/>
+</g>
+<!-- Jaeger -->
+<g id="node5" class="node">
+<title>Jaeger</title>
+<path fill="#3a4a5a" stroke="#444444" d="M287.01,-332C287.01,-332 242.99,-332 242.99,-332 236.99,-332 230.99,-326 230.99,-320 230.99,-320 230.99,-308 230.99,-308 230.99,-302 236.99,-296 242.99,-296 242.99,-296 287.01,-296 287.01,-296 293.01,-296 299.01,-302 299.01,-308 299.01,-308 299.01,-320 299.01,-320 299.01,-326 293.01,-332 287.01,-332"/>
+<text text-anchor="middle" x="265" y="-310.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Jaeger UI</text>
+</g>
+<!-- User&#45;&gt;Jaeger -->
+<g id="edge16" class="edge">
+<title>User-&gt;Jaeger</title>
+<path fill="none" stroke="#bbbbbb" d="M137.84,-339.14C164.3,-333.87 194.93,-327.76 219.38,-322.89"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="219.89,-326.36 229.01,-320.97 218.52,-319.49 219.89,-326.36"/>
+</g>
+<!-- Nginx -->
+<g id="node6" class="node">
+<title>Nginx</title>
+<path fill="#34543c" stroke="#444444" d="M501.7,-568C501.7,-568 471.7,-568 471.7,-568 465.7,-568 459.7,-562 459.7,-556 459.7,-556 459.7,-544 459.7,-544 459.7,-538 465.7,-532 471.7,-532 471.7,-532 501.7,-532 501.7,-532 507.7,-532 513.7,-538 513.7,-544 513.7,-544 513.7,-556 513.7,-556 513.7,-562 507.7,-568 501.7,-568"/>
+<text text-anchor="middle" x="486.7" y="-546.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Nginx</text>
+</g>
+<!-- User&#45;&gt;Nginx -->
+<g id="edge1" class="edge">
+<title>User-&gt;Nginx</title>
+<path fill="none" stroke="#bbbbbb" d="M103.82,-406.84C128.14,-453.19 169.41,-516.59 225.65,-549 295.8,-589.43 395.29,-573.7 448.58,-560.66"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="449.25,-564.1 458.07,-558.23 447.51,-557.32 449.25,-564.1"/>
+<text text-anchor="middle" x="265" y="-577.88" font-family="Times,serif" font-size="14.00" fill="#ffffff">HTTP</text>
+</g>
+<!-- Telegram -->
+<g id="node12" class="node">
+<title>Telegram</title>
+<ellipse fill="#3a4a5a" stroke="#444444" cx="960.35" cy="-106" rx="42.59" ry="18"/>
+<text text-anchor="middle" x="960.35" y="-102.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Telegram</text>
+</g>
+<!-- User&#45;&gt;Telegram -->
+<g id="edge17" class="edge">
+<title>User-&gt;Telegram</title>
+<path fill="none" stroke="#bbbbbb" d="M83.23,-289.86C95.01,-189.3 134.39,0 264,0 264,0 264,0 735.84,0 812.37,0 890.67,-51.37 931.18,-82.59"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="928.96,-85.3 938.98,-88.73 933.29,-79.8 928.96,-85.3"/>
+</g>
+<!-- Locust&#45;&gt;Nginx -->
+<g id="edge5" class="edge">
+<title>Locust-&gt;Nginx</title>
+<path fill="none" stroke="#ff5555" stroke-dasharray="5,2" d="M298.42,-509.08C338.35,-517.81 406.05,-532.6 448.19,-541.81"/>
+<polygon fill="#ff5555" stroke="#ff5555" points="447.36,-545.21 457.87,-543.92 448.85,-538.37 447.36,-545.21"/>
+<text text-anchor="middle" x="375.35" y="-535.91" font-family="Times,serif" font-size="14.00" fill="#ffffff">Нагрузка</text>
+</g>
+<!-- Prometheus -->
+<g id="node9" class="node">
+<title>Prometheus</title>
+<path fill="#5a3f2e" stroke="#444444" d="M515.04,-208C515.04,-208 458.35,-208 458.35,-208 452.35,-208 446.35,-202 446.35,-196 446.35,-196 446.35,-184 446.35,-184 446.35,-178 452.35,-172 458.35,-172 458.35,-172 515.04,-172 515.04,-172 521.04,-172 527.04,-178 527.04,-184 527.04,-184 527.04,-196 527.04,-196 527.04,-202 521.04,-208 515.04,-208"/>
+<text text-anchor="middle" x="486.7" y="-186.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Prometheus</text>
+</g>
+<!-- Grafana&#45;&gt;Prometheus -->
+<g id="edge9" class="edge">
+<title>Grafana-&gt;Prometheus</title>
+<path fill="none" stroke="#bbbbbb" d="M295.17,-216.02C330.75,-211.16 391.47,-202.87 434.81,-196.95"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="435.04,-200.45 444.48,-195.63 434.1,-193.51 435.04,-200.45"/>
+<text text-anchor="middle" x="375.35" y="-212.77" font-family="Times,serif" font-size="14.00" fill="#ffffff">Запросы</text>
+</g>
+<!-- Pastebin -->
+<g id="node7" class="node">
+<title>Pastebin</title>
+<path fill="#34543c" stroke="#444444" d="M776.85,-529.4C776.85,-529.4 692.83,-529.4 692.83,-529.4 686.83,-529.4 680.83,-523.4 680.83,-517.4 680.83,-517.4 680.83,-504.6 680.83,-504.6 680.83,-498.6 686.83,-492.6 692.83,-492.6 692.83,-492.6 776.85,-492.6 776.85,-492.6 782.85,-492.6 788.85,-498.6 788.85,-504.6 788.85,-504.6 788.85,-517.4 788.85,-517.4 788.85,-523.4 782.85,-529.4 776.85,-529.4"/>
+<text text-anchor="middle" x="734.84" y="-514.6" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Pastebin</text>
+<text text-anchor="middle" x="734.84" y="-500.2" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">(Perl/Mojolicious)</text>
+</g>
+<!-- Swagger&#45;&gt;Pastebin -->
+<g id="edge4" class="edge">
+<title>Swagger-&gt;Pastebin</title>
+<path fill="none" stroke="#bbbbbb" d="M304.68,-416.52C385.1,-434.22 571.04,-475.16 669.68,-496.88"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="668.69,-500.24 679.21,-498.97 670.2,-493.4 668.69,-500.24"/>
+<text text-anchor="middle" x="486.7" y="-468.84" font-family="Times,serif" font-size="14.00" fill="#ffffff">OpenAPI</text>
+</g>
+<!-- Nginx&#45;&gt;Pastebin -->
+<g id="edge2" class="edge">
+<title>Nginx-&gt;Pastebin</title>
+<path fill="none" stroke="#bbbbbb" d="M514.04,-545.83C550.82,-540 618.74,-529.24 669.38,-521.21"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="669.73,-524.7 679.06,-519.68 668.63,-517.79 669.73,-524.7"/>
+<text text-anchor="middle" x="601.93" y="-540.47" font-family="Times,serif" font-size="14.00" fill="#ffffff">proxy_pass</text>
+</g>
+<!-- Pastebin&#45;&gt;Jaeger -->
+<g id="edge12" class="edge">
+<title>Pastebin-&gt;Jaeger</title>
+<path fill="none" stroke="#bbbbbb" d="M697.03,-492.33C678.24,-482.96 654.94,-471.6 633.82,-462 518.71,-409.71 379.43,-356.27 309.92,-330.24"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="311.39,-327.06 300.8,-326.84 308.94,-333.61 311.39,-327.06"/>
+<text text-anchor="middle" x="486.7" y="-418.13" font-family="Times,serif" font-size="14.00" fill="#ffffff">Трейсы</text>
+</g>
+<!-- CouchDB -->
+<g id="node8" class="node">
+<title>CouchDB</title>
+<path fill="#4e3b5f" stroke="#444444" d="M994.03,-544.73C994.03,-546.53 978.93,-548 960.35,-548 941.76,-548 926.67,-546.53 926.67,-544.73 926.67,-544.73 926.67,-515.27 926.67,-515.27 926.67,-513.47 941.76,-512 960.35,-512 978.93,-512 994.03,-513.47 994.03,-515.27 994.03,-515.27 994.03,-544.73 994.03,-544.73"/>
+<path fill="none" stroke="#444444" d="M994.03,-544.73C994.03,-542.92 978.93,-541.45 960.35,-541.45 941.76,-541.45 926.67,-542.92 926.67,-544.73"/>
+<text text-anchor="middle" x="960.35" y="-526.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">CouchDB</text>
+</g>
+<!-- Pastebin&#45;&gt;CouchDB -->
+<g id="edge3" class="edge">
+<title>Pastebin-&gt;CouchDB</title>
+<path fill="none" stroke="#bbbbbb" d="M789.09,-515.53C827.54,-518.8 878.85,-523.16 915.06,-526.24"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="914.49,-529.7 924.75,-527.06 915.08,-522.72 914.49,-529.7"/>
+<text text-anchor="middle" x="855.31" y="-526.96" font-family="Times,serif" font-size="14.00" fill="#ffffff">CRUD</text>
+</g>
+<!-- Prometheus&#45;&gt;Pastebin -->
+<g id="edge6" class="edge">
+<title>Prometheus-&gt;Pastebin</title>
+<path fill="none" stroke="#bbbbbb" d="M537.92,-205.32C569.1,-217.06 607.99,-236.08 633.82,-264.2 697.15,-333.15 722.87,-447.44 730.86,-492.2"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="539.27,-202.08 528.68,-201.98 536.9,-208.67 539.27,-202.08"/>
+<text text-anchor="middle" x="601.93" y="-268.4" font-family="Times,serif" font-size="14.00" fill="#ffffff">Метрики</text>
+</g>
+<!-- Alertmanager -->
+<g id="node10" class="node">
+<title>Alertmanager</title>
+<path fill="#5a3f2e" stroke="#444444" d="M766.86,-124C766.86,-124 702.82,-124 702.82,-124 696.82,-124 690.82,-118 690.82,-112 690.82,-112 690.82,-100 690.82,-100 690.82,-94 696.82,-88 702.82,-88 702.82,-88 766.86,-88 766.86,-88 772.86,-88 778.86,-94 778.86,-100 778.86,-100 778.86,-112 778.86,-112 778.86,-118 772.86,-124 766.86,-124"/>
+<text text-anchor="middle" x="734.84" y="-102.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">Alertmanager</text>
+</g>
+<!-- Prometheus&#45;&gt;Alertmanager -->
+<g id="edge10" class="edge">
+<title>Prometheus-&gt;Alertmanager</title>
+<path fill="none" stroke="#ff5555" d="M527.52,-176.41C568.83,-162.31 633.71,-140.17 679.68,-124.48"/>
+<polygon fill="#ff5555" stroke="#ff5555" points="680.58,-127.87 688.91,-121.33 678.32,-121.25 680.58,-127.87"/>
+</g>
+<!-- CouchDB_Exporter -->
+<g id="node11" class="node">
+<title>CouchDB_Exporter</title>
+<path fill="#5a3f2e" stroke="#444444" d="M780.86,-218C780.86,-218 688.82,-218 688.82,-218 682.82,-218 676.82,-212 676.82,-206 676.82,-206 676.82,-194 676.82,-194 676.82,-188 682.82,-182 688.82,-182 688.82,-182 780.86,-182 780.86,-182 786.86,-182 792.86,-188 792.86,-194 792.86,-194 792.86,-206 792.86,-206 792.86,-212 786.86,-218 780.86,-218"/>
+<text text-anchor="middle" x="734.84" y="-196.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#ffffff">CouchDB Exporter</text>
+</g>
+<!-- Prometheus&#45;&gt;CouchDB_Exporter -->
+<g id="edge7" class="edge">
+<title>Prometheus-&gt;CouchDB_Exporter</title>
+<path fill="none" stroke="#bbbbbb" d="M538.84,-185.12C549.16,-184.32 559.94,-183.62 570.04,-183.2 598.36,-182.03 605.57,-180.84 633.82,-183.2 647.68,-184.36 662.51,-186.4 676.39,-188.67"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="538.63,-181.62 528.95,-185.93 539.21,-188.6 538.63,-181.62"/>
+<text text-anchor="middle" x="601.93" y="-187.4" font-family="Times,serif" font-size="14.00" fill="#ffffff">Метрики</text>
+</g>
+<!-- Alertmanager&#45;&gt;Telegram -->
+<g id="edge11" class="edge">
+<title>Alertmanager-&gt;Telegram</title>
+<path fill="none" stroke="#ff5555" stroke-width="2" d="M779.2,-106C815.59,-106 867.72,-106 906.54,-106"/>
+<polygon fill="#ff5555" stroke="#ff5555" stroke-width="2" points="904.59,-109.5 914.59,-106 904.59,-102.5 904.59,-109.5"/>
+</g>
+<!-- CouchDB_Exporter&#45;&gt;CouchDB -->
+<g id="edge8" class="edge">
+<title>CouchDB_Exporter-&gt;CouchDB</title>
+<path fill="none" stroke="#bbbbbb" stroke-dasharray="5,2" d="M748.17,-218.21C785.34,-273.09 896.43,-437.1 940.77,-502.57"/>
+<polygon fill="#bbbbbb" stroke="#bbbbbb" points="937.7,-504.27 946.2,-510.59 943.49,-500.35 937.7,-504.27"/>
+</g>
+</g>
+</svg>

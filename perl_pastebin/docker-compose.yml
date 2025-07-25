@@ -97,18 +97,11 @@ services:
       - prometheus
 
   swagger-ui:
-    # Используем официальный, готовый образ
-    image: swaggerapi/swagger-ui:latest
-    ports:
-      # Открываем новый порт 8081 для доступа к Swagger UI
-      - "8081:8080"
-    environment:
-      # --- ВОТ МАГИЯ ---
-      # Этой переменной мы говорим контейнеру, откуда загружать спецификацию.
-      # Он запросит ее у нашего сервиса pastebin по его внутреннему Docker-имени.
-      - URL=http://localhost:3000/openapi.json
-    depends_on:
-      - pastebin
+      image: swaggerapi/swagger-ui:latest
+      ports:
+        - "8081:8080"
+      volumes:
+        - ./public/openapi.json:/usr/share/nginx/html/swagger.json:ro
   
   jaeger:
     image: jaegertracing/all-in-one:latest
