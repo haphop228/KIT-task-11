@@ -10,16 +10,21 @@ services:
       - pastebin
 
   pastebin:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - COUCHDB_URL=http://admin:password@couchdb:5984
-    # ИЗМЕНЕНИЕ: Указываем, что pastebin должен дождаться, пока couchdb
-    # не станет "healthy" (здоровым).
-    depends_on:
-      couchdb:
-        condition: service_healthy
+      build: .
+      ports:
+        - "3000:3000"
+      environment:
+        - COUCHDB_URL=http://admin:password@couchdb:5984
+      depends_on:
+        couchdb:
+          condition: service_healthy
+      # --- НОВАЯ СЕКЦИЯ ---
+      healthcheck:
+        # Проверяем, что сервис не просто жив, а готов принимать трафик
+        test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+        interval: 5s
+        timeout: 2s
+        retries: 10
 
   couchdb:
     image: couchdb:3
@@ -30,26 +35,18 @@ services:
       - COUCHDB_PASSWORD=password
     volumes:
       - couchdb_data:/opt/couchdb/data
-    # НОВАЯ СЕКЦИЯ: HEALTHCHECK
-    # Docker будет периодически выполнять эту команду, чтобы проверить, "здоров" ли сервис.
     healthcheck:
-      # Проверяем, что сервер CouchDB отвечает на базовый запрос.
       test: ["CMD", "curl", "-f", "http://localhost:5984"]
       interval: 5s
       timeout: 2s
       retries: 10
 
   couchdb-exporter:
-    # ИЗМЕНЕНИЕ 1: Используем правильное имя образа
     image: gesellix/couchdb-prometheus-exporter
     ports:
       - "9984:9984"
-    # ИЗМЕНЕНИЕ 2: Используем 'command' для явной передачи параметров
     command:
-      # Параметр для подключения к вашей БД
       - '--couchdb.uri=http://admin:password@couchdb:5984'
-      # Эта полезная опция заставит экспортер собирать метрики по ВСЕМ базам данных,
-      # включая вашу 'pastes', без необходимости указывать их имена вручную.
       - '--databases=_all_dbs'
     depends_on:
       - couchdb
@@ -100,18 +97,20 @@ services:
       image: swaggerapi/swagger-ui:latest
       ports:
         - "8081:8080"
-      volumes:
-        - ./public/openapi.json:/usr/share/nginx/html/swagger.json:ro
-  
+      environment:
+        # --- ИСПРАВЛЕНИЕ 1: Используем имя сервиса, а не localhost ---
+        - URL=http://localhost:8080/openapi.json
+      depends_on:
+        pastebin:
+          # --- ИСПРАВЛЕНИЕ 2: Ждем, пока pastebin не станет 'healthy' ---
+          condition: service_healthy
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
-      # Порт для UI
       - "16686:16686"
-      # Порт для приема трейсов по протоколу OTLP/HTTP
       - "4318:4318"
     environment:
-      # Включаем приемник OTLP
       - COLLECTOR_OTLP_ENABLED=true
 
 volumes:

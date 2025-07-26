@@ -7,8 +7,8 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
-      "description": "Local development server"
+      "url": "http://localhost:8080",
+      "description": "Local development server (via Nginx)"
     }
   ],
   "paths": {
@@ -56,9 +56,6 @@
           },
           "400": {
             "description": "Bad Request. The 'content' field was missing or empty."
-          },
-          "500": {
-            "description": "Internal Server Error. Could not save the paste, likely due to a database connection issue or an unexpected database response."
           }
         }
       }
@@ -89,9 +86,24 @@
           },
           "404": {
             "description": "Not Found. A paste with the specified ID does not exist."
+          }
+        }
+      }
+    },
+    "/docs": {
+      "get": {
+        "summary": "View Project Documentation",
+        "description": "Displays the project's README.md file, rendered as an HTML page. This is useful for quickly understanding the project's setup and endpoints without needing to access the code repository.",
+        "tags": ["Documentation"],
+        "responses": {
+          "200": {
+            "description": "Success. Returns the documentation as an HTML page.",
+            "content": {
+              "text/html": {}
+            }
           },
-          "500": {
-            "description": "Internal Server Error. Could not retrieve the paste, likely due to a database connection issue."
+          "404": {
+            "description": "Not Found. The README.md file could not be found on the server."
           }
         }
       }
@@ -156,6 +168,10 @@
     {
       "name": "Health",
       "description": "Endpoints for monitoring service health and readiness."
+    },
+    {
+      "name": "Documentation",
+      "description": "Meta-endpoints related to project documentation."
     }
   ]
 }

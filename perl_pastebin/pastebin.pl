@@ -141,7 +141,7 @@ post '/' => sub {
     return $c->render(text => 'Content cannot be empty', status => 400) unless $content;
 
 
-    create_artificial_delay();
+    #create_artificial_delay();
 
 
     my $string_to_hash = encode_utf8($content . time . rand());

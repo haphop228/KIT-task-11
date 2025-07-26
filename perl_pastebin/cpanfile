@@ -18,3 +18,6 @@ requires 'OpenTelemetry::Exporter::OTLP';
 requires 'Devel::NYTProf';
 requires 'Text::Markdown'; # Для отображения README в браузере
 requires 'Text::Markdown::Discount'; # Более мощный парсер с поддержкой таблиц
+
+requires 'OpenTelemetry::SDK';
+#requires 'Google::ProtocolBuffers::Dynamic';
