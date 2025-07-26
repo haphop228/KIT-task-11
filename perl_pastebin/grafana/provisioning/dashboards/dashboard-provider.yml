@@ -1,12 +1,15 @@
+# grafana/provisioning/dashboards/dashboard-provider.yml
+# ОБНОВЛЕННАЯ ВЕРСИЯ
+
 apiVersion: 1
 
 providers:
-  - name: 'default' # Имя провайдера, может быть любым
+  - name: 'Pastebin Monitoring'
     orgId: 1
-    folder: '' # Поместить дашборды в General папку
+    folder: ''
     type: file
     disableDeletion: false
     editable: true
     options:
-      # Путь к папке с дашбордами ВНУТРИ контейнера
       path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

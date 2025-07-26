@@ -1,0 +1,28 @@
+{
+  "annotations": { "list": [] }, "editable": true, "gnetId": null,
+  "graphTooltip": 0, "panels": [
+    { "title": "Service Status", "type": "stat", "gridPos": { "h": 4, "w": 12, "x": 0, "y": 0 }, "id": 1,
+      "targets": [{ "expr": "up{job=\"pastebin\"}", "legendFormat": "Pastebin Service", "refId": "A" }],
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+        "orientation": "auto", "textMode": "auto"
+      },
+      "fieldConfig": { "defaults": {
+        "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
+        "mappings": [{ "type": "value", "options": { "1": { "text": "UP", "color": "green" }, "0": { "text": "DOWN", "color": "red" } } }]
+      }}
+    },
+    { "title": "Error Rate (5xx)", "type": "stat", "gridPos": { "h": 4, "w": 12, "x": 12, "y": 0 }, "id": 2,
+      "targets": [{ "expr": "sum(rate(http_requests_total{job=\"pastebin\", code=~\"5..\"}[2m])) / sum(rate(http_requests_total{job=\"pastebin\"}[2m])) * 100", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 5 }] } } }
+    },
+    { "title": "Requests Per Second (RPS)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 }, "id": 4,
+      "targets": [{ "expr": "sum(rate(http_requests_total{job=\"pastebin\"}[2m]))", "legendFormat": "Total RPS", "refId": "A" }]
+    },
+    { "title": "Total Response Time (p99)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 }, "id": 5,
+      "targets": [{ "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le)) + histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))", "legendFormat": "p99 Total Time (Service + Queue)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    }
+  ],
+  "folder": "Pastebin Service", "title": "1. Service Overview", "uid": "pastebin-overview-v5"
+}
