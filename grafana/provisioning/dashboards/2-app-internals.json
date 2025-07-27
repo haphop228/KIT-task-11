@@ -1,25 +1,103 @@
 {
-  "annotations": { "list": [] }, "editable": true, "gnetId": null,
-  "graphTooltip": 0, "panels": [
-    { "title": "Total CPU Usage", "type": "timeseries", "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 }, "id": 1,
-      "targets": [{ "expr": "sum(rate(process_cpu_seconds_total{job=\"pastebin\"}[2m]))", "legendFormat": "Total CPU Usage", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "cores" } }
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "title": "CPU Usage by Instance",
+      "description": "Использование CPU каждым экземпляром сервиса.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total{job=\"pastebin\"}[2m])",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cores"
+        }
+      }
     },
-    { "title": "Total Memory Usage", "type": "timeseries", "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 }, "id": 2,
-      "targets": [{ "expr": "sum(process_resident_memory_bytes{job=\"pastebin\"})", "legendFormat": "Total Memory Usage", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    {
+      "title": "Memory Usage by Instance",
+      "description": "Использование оперативной памяти (RSS) каждым экземпляром сервиса.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes{job=\"pastebin\"}",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
     },
-    { "title": "Open File Descriptors", "type": "timeseries", "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 }, "id": 3,
-      "targets": [{ "expr": "sum(process_open_fds{job=\"pastebin\"})", "legendFormat": "Total Open FDs", "refId": "A" }]
+    {
+      "title": "Open File Descriptors by Instance",
+      "description": "Количество открытых файловых дескрипторов каждым экземпляром.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "process_open_fds{job=\"pastebin\"}",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
     },
-    { "title": "Service Latency (p99)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }, "id": 4,
-      "targets": [{ "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))", "legendFormat": "p99 Service Time", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "s" } }
+    {
+      "title": "Service Latency (p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))",
+          "legendFormat": "p99 Service Time",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
     },
-    { "title": "Queue Latency (p99)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }, "id": 5,
-      "targets": [{ "expr": "histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))", "legendFormat": "p99 Queue Time", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "s" } }
+    {
+      "title": "Queue Latency (p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))",
+          "legendFormat": "p99 Queue Time",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
     }
   ],
-  "folder": "Pastebin Service", "title": "2. Application Internals", "uid": "pastebin-internals-final"
+  "folder": {
+    "title": "Pastebin Service"
+  },
+  "title": "2. Application Internals",
+  "uid": "pastebin-internals-v2"
 }

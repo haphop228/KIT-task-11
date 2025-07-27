@@ -12,8 +12,8 @@ groups:
         histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job="pastebin"}[2m])) by (le))
       ) > 0.5
     
-    # Условие должно выполняться в течение 1 минуты
-    for: 1m
+    # Условие должно выполняться в течение 15 секунд
+    for: 15s
     
     labels:
       severity: 'critical'
@@ -27,8 +27,8 @@ groups:
   - alert: HighDatabaseRPS
     # Срабатывает, если скорость запросов к БД > 100 в секунду
     expr: sum(rate(db_requests_total{job="pastebin"}[1m])) > 100
-    # Условие должно выполняться 30 секунд
-    for: 30s
+    # Условие должно выполняться 15 секунд
+    for: 15s
     labels:
       severity: 'warning'
     annotations:

@@ -1,28 +1,199 @@
 {
-  "annotations": { "list": [] }, "editable": true, "gnetId": null,
-  "graphTooltip": 0, "panels": [
-    { "title": "Service Status", "type": "stat", "gridPos": { "h": 4, "w": 12, "x": 0, "y": 0 }, "id": 1,
-      "targets": [{ "expr": "up{job=\"pastebin\"}", "legendFormat": "Pastebin Service", "refId": "A" }],
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "title": "Pastebin Service Status",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "up{job=\"pastebin\"}",
+          "legendFormat": "Pastebin Service",
+          "refId": "A"
+        }
+      ],
       "options": {
         "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
-        "orientation": "auto", "textMode": "auto"
+        "orientation": "auto",
+        "textMode": "auto"
       },
-      "fieldConfig": { "defaults": {
-        "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
-        "mappings": [{ "type": "value", "options": { "1": { "text": "UP", "color": "green" }, "0": { "text": "DOWN", "color": "red" } } }]
-      }}
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": { "text": "UP", "color": "green" },
+                "0": { "text": "DOWN", "color": "red" }
+              }
+            }
+          ]
+        }
+      }
     },
-    { "title": "Error Rate (5xx)", "type": "stat", "gridPos": { "h": 4, "w": 12, "x": 12, "y": 0 }, "id": 2,
-      "targets": [{ "expr": "sum(rate(http_requests_total{job=\"pastebin\", code=~\"5..\"}[2m])) / sum(rate(http_requests_total{job=\"pastebin\"}[2m])) * 100", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 5 }] } } }
+    {
+      "title": "Error Rate (4xx)",
+      "description": "Процент запросов с клиентскими ошибками (400-499). Высокий уровень может указывать на проблемы с API, сканирование или неправильные запросы от клиентов.",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 10,
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"pastebin\", code=~\"4..\"}[2m])) / sum(rate(http_requests_total{job=\"pastebin\"}[2m])) * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 5 },
+              { "color": "red", "value": 15 }
+            ]
+          }
+        }
+      }
     },
-    { "title": "Requests Per Second (RPS)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 }, "id": 4,
-      "targets": [{ "expr": "sum(rate(http_requests_total{job=\"pastebin\"}[2m]))", "legendFormat": "Total RPS", "refId": "A" }]
+    {
+      "title": "Error Rate (5xx)",
+      "description": "Процент запросов с серверными ошибками (500-599). Любое значение выше нуля требует внимания.",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"pastebin\", code=~\"5..\"}[2m])) / sum(rate(http_requests_total{job=\"pastebin\"}[2m])) * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
     },
-    { "title": "Total Response Time (p99)", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 }, "id": 5,
-      "targets": [{ "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le)) + histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))", "legendFormat": "p99 Total Time (Service + Queue)", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "s" } }
+    {
+      "title": "CouchDB Exporter Status",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 11,
+      "targets": [
+        {
+          "expr": "up{job=\"couchdb\"}",
+          "legendFormat": "CouchDB Exporter",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": { "text": "UP", "color": "green" },
+                "0": { "text": "DOWN", "color": "red" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Requests Per Second (RPS) by Status Code",
+      "description": "Количество запросов в секунду, сгруппированное по коду ответа HTTP.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"pastebin\", code=~\"2..\"}[2m])) by (code)",
+          "legendFormat": "Success ({{code}})",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=\"pastebin\", code=~\"3..\"}[2m])) by (code)",
+          "legendFormat": "Redirect ({{code}})",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=\"pastebin\", code=~\"4..\"}[2m])) by (code)",
+          "legendFormat": "Client Error ({{code}})",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=\"pastebin\", code=~\"5..\"}[2m])) by (code)",
+          "legendFormat": "Server Error ({{code}})",
+          "refId": "D"
+        }
+      ],
+      "options": {
+        "stacking": { "mode": "normal" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "title": "Total Response Time (p99)",
+      "description": "99-й перцентиль общего времени ответа, включая время в очереди и время обработки самого запроса. Показывает максимальное время ответа для большинства пользователей.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le)) + histogram_quantile(0.99, sum(rate(http_request_queue_duration_seconds_bucket{job=\"pastebin\"}[2m])) by (le))",
+          "legendFormat": "p99 Total Time (Service + Queue)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
     }
   ],
-  "folder": "Pastebin Service", "title": "1. Service Overview", "uid": "pastebin-overview-v5"
+  "folder": {
+    "title": "Pastebin Service"
+  },
+  "title": "1. Service Overview",
+  "uid": "pastebin-overview-v6"
 }
