@@ -118,14 +118,6 @@ services:
       pastebin:
         condition: service_healthy
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - "16686:16686"
-      - "4318:4318"
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-
 volumes:
   prometheus_data: {}
   grafana_data: {}

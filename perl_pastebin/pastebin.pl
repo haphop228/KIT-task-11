@@ -142,6 +142,8 @@ post '/' => sub {
     my $id = substr(sha1_hex($string_to_hash), 0, 10);
     $c->trace_log('info', "Generated new paste ID: $id");
 
+    #create_artificial_delay();
+
     my $doc = { _id => $id, content => $content, language => lc($lang), created => time(), };
 
     $db_requests_counter->inc();
