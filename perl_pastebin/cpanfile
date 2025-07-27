@@ -20,4 +20,5 @@ requires 'Text::Markdown'; # Для отображения README в брауз�
 requires 'Text::Markdown::Discount'; # Более мощный парсер с поддержкой таблиц
 
 requires 'OpenTelemetry::SDK';
+requires 'Data::UUID';
 #requires 'Google::ProtocolBuffers::Dynamic';

@@ -1,9 +1,23 @@
+# grafana/provisioning/datasources/datasources.yml
 apiVersion: 1
 
 datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
+    orgId: 1
     url: http://prometheus:9090
     isDefault: true
-    editable: false
+  # --- НОВЫЙ ИСТОЧНИК ДАННЫХ LOKI ---
+  - name: Loki
+    type: loki
+    access: proxy
+    orgId: 1
+    url: http://loki:3100
+    jsonData:
+      # Говорим Grafana, какие поля из JSON парсить
+      derivedFields:
+        - datasourceUid: loki # Убедитесь, что это совпадает с UID источника
+          matcherRegex: '"trace_id":"([^"]+)"'
+          name: trace_id
+          url: '$${__value.raw}' # Просто отображаем значение

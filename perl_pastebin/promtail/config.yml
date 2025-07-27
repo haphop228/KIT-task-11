@@ -1,0 +1,24 @@
+# promtail/config.yml
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+- job_name: containers
+  docker_sd_configs:
+    - host: unix:///var/run/docker.sock
+      refresh_interval: 5s
+  relabel_configs:
+    # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+    # Мы берем специальный лейбл, который Docker Compose автоматически
+    # присваивает всем контейнерам. Этот лейбл содержит "чистое" имя сервиса
+    # (например, "pastebin", "nginx", "prometheus").
+    - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+      # И присваиваем его значение нашему постоянному лейблу 'service'.
+      target_label: 'service'

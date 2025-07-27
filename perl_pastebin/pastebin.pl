@@ -8,12 +8,15 @@ use Digest::SHA qw(sha1_hex);
 use Time::HiRes qw(time sleep);
 use Encode qw(encode_utf8);
 use Mojo::JSON qw(encode_json);
-use Text::Markdown::Discount qw(markdown); # ИСПОЛЬЗУЕМ НОВЫЙ МОДУЛЬ
-use Path::Tiny; # Уже должен быть установлен как зависимость Mojolicious
+use Text::Markdown::Discount qw(markdown);
+use Path::Tiny;
+
+# --- МОДУЛЬ ДЛЯ ТРАССИРОВКИ ---
+use Data::UUID;
 
 our $db_initialized = 0;
 
-# --- ОКОНЧАТЕЛЬНАЯ КОНФИГУРАЦИЯ СЕРВЕРА ---
+# --- КОНФИГУРАЦИЯ СЕРВЕРА ---
 app->plugin('Config' => {
   default => {
     hypnotoad => {
@@ -24,80 +27,73 @@ app->plugin('Config' => {
   }
 });
 
-# --- ИСКУССТВЕННАЯ ПРОБЛЕМА ДЛЯ ДЕМОНСТРАЦИИ ПРОФИЛИРОВЩИКА ---
-# Эта функция имитирует сложный, ресурсоемкий алгоритм,
-# который замедляет работу приложения.
+# --- ИСКУССТВЕННАЯ ЗАДЕРЖКА ---
 sub create_artificial_delay {
-    my $iterations = 20000; # Подберите значение, чтобы задержка была заметной (0.5-1 сек)
+    my $iterations = 20000;
     my $value = 1;
-    for my $i (1..$iterations) {
-        for my $j (1..50) {
-            $value += sqrt($i * $j);
-        }
-    }
+    for my $i (1..$iterations) { for my $j (1..50) { $value += sqrt($i * $j); } }
     return $value;
 }
 
-# --- ИНИЦИАЛИЗАЦИЯ СОЕДИНЕНИЯ ---
+# --- ИНИЦИАЛИЗАЦИЯ COUCHDB ---
 my $couch_url_str = app->config->{couchdb_url} || $ENV{COUCHDB_URL};
 die "COUCHDB_URL is not set!" unless $couch_url_str;
-
 my $url_obj = Mojo::URL->new($couch_url_str);
 my ($user, $pass) = split ':', $url_obj->userinfo || '';
 $url_obj->userinfo(undef);
-
 my $couch = Mojo::CouchDB->new($url_obj, $user, $pass);
 my $db = $couch->db('pastes');
 
-# --- Хук для автоматического создания БД ---
+# --- Хук для создания БД при старте ---
 app->hook(before_server_start => sub {
-    # Выполняем этот блок кода только один раз, даже если хук вызывают повторно
     return if $db_initialized++;
-
     my $max_retries = 5;
     my $retry_delay = 2;
     for my $attempt (1..$max_retries) {
         app->log->info("Ensuring 'pastes' database exists (attempt $attempt/$max_retries)...");
-        
-        # Пытаемся создать БД и ловим ЛЮБУЮ фатальную ошибку
         eval { $db->create_db };
-
-        # Сценарий 1: Ошибки не было - значит, БД успешно создана.
-        if (!$@) {
-            app->log->info("'pastes' database created successfully.");
-            return; # Успех
-        }
-        
-        # Сценарий 2: Ошибка была, но это ошибка "file_exists" - это тоже успех.
-        if ($@ =~ /file_exists/) {
-            app->log->info("'pastes' database already exists.");
-            return; # Успех
-        }
-
-        # Сценарий 3: Любая другая ошибка (сеть, права и т.д.) - повторяем.
+        if (!$@) { app->log->info("'pastes' database created successfully."); return; }
+        if ($@ =~ /file_exists/) { app->log->info("'pastes' database already exists."); return; }
         app->log->warn("Could not create/verify database (Error: $@). Retrying in $retry_delay seconds...");
         sleep $retry_delay;
     }
-    
     die "Failed to connect to and setup CouchDB after $max_retries attempts.";
 });
 
-# --- НАСТРОЙКА PROMETHEUS ---
-app->plugin('Prometheus' => {
-  duration_buckets => [ 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5 ],
-});
-my $db_requests_counter = app->prometheus->new_counter(
-    name => 'db_requests_total',
-    help => 'Total requests to the CouchDB.',
-);
-my $queue_duration_histogram = app->prometheus->new_histogram(
-    name    => 'http_request_queue_duration_seconds',
-    help    => 'Time the request spent in the queue before being processed.',
-    buckets => [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
-);
 
-# --- ХУК ДЛЯ ИЗМЕРЕНИЯ ВРЕМЕНИ В ОЧЕРЕДИ ---
-# Этот код выполняется для каждого запроса до того, как сработает основной маршрут.
+# --- РЕАЛИЗАЦИЯ ТРАССИРОВКИ ---
+my $ug = Data::UUID->new;
+app->hook(around_dispatch => sub {
+    my ($next, $c) = @_;
+    my $trace_id = $c->req->headers->header('X-Trace-ID') || $ug->create_str();
+    my $span_id  = $ug->create_str();
+    $c->stash(trace_id => $trace_id, span_id => $span_id);
+    $c->res->headers->header('X-Trace-ID' => $trace_id);
+    $c->res->headers->header('X-Span-ID'  => $span_id);
+    return $next->();
+});
+
+# --- Хелпер для структурированного логирования ---
+helper trace_log => sub {
+    my ($c, $level, $message) = @_;
+    my $log_entry = {
+        timestamp => sprintf("%.6f", Time::HiRes::time()),
+        level     => $level,
+        trace_id  => $c->stash('trace_id'),
+        span_id   => $c->stash('span_id'),
+        message   => $message,
+        endpoint  => $c->req->url->path->to_string,
+        method    => $c->req->method,
+    };
+    print STDERR encode_json($log_entry), "\n";
+};
+
+
+# --- НАСТРОЙКА PROMETHEUS И ДРУГИЕ ХУКИ ---
+app->plugin('Prometheus' => { duration_buckets => [ 0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 5 ], });
+my $db_requests_counter = app->prometheus->new_counter( name => 'db_requests_total', help => 'Total requests to the CouchDB.', );
+my $queue_duration_histogram = app->prometheus->new_histogram( name => 'http_request_queue_duration_seconds', help => 'Time the request spent in the queue before being processed.', buckets => [0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 5], );
+
 app->hook(around_dispatch => sub {
     my ($next, $c) = @_;
     if (my $start_header = $c->req->headers->header('X-Request-Start')) {
@@ -109,15 +105,7 @@ app->hook(around_dispatch => sub {
     }
     return $next->();
 });
-
-# --- ХУК ДЛЯ РЕШЕНИЯ ПРОБЛЕМЫ CORS ---
-# Этот код будет добавлять разрешающий заголовок ко всем ответам.
-# Это позволит Swagger UI, загруженному с другого порта,
-# успешно запрашивать наш openapi.json.
-app->hook(after_dispatch => sub {
-    my $c = shift;
-    $c->res->headers->header('Access-Control-Allow-Origin' => '*');
-});
+app->hook(after_dispatch => sub { shift->res->headers->header('Access-Control-Allow-Origin' => '*'); });
 
 # --- Маршруты (API) ---
 get '/' => 'index';
@@ -126,83 +114,78 @@ get '/healthz' => sub { shift->render(text => 'OK') };
 
 get '/readyz' => sub {
     my $c = shift;
+    $c->trace_log('info', "Performing readiness check.");
     eval { $couch->info };
     if ($@) {
-        $c->app->log->error("Readiness check failed: $@");
+        $c->trace_log('error', "Readiness check failed: $@");
         return $c->render(text => 'CouchDB Unreachable', status => 503);
     }
+    $c->trace_log('info', "Readiness check successful.");
     return $c->render(text => 'Ready');
 };
 
+# --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
 post '/' => sub {
     my $c = shift;
+    $c->trace_log('info', "Received request to create a new paste.");
+
     my $content = $c->param('content') || '';
     my $lang    = $c->param('language') || 'plaintext';
-    return $c->render(text => 'Content cannot be empty', status => 400) unless $content;
 
-
-    #create_artificial_delay();
-
+    if (!$content) {
+        $c->trace_log('warn', "Validation failed: content is empty.");
+        return $c->render(text => 'Content cannot be empty', status => 400);
+    }
+    $c->trace_log('debug', "Validation successful. Content length: " . length($content));
 
     my $string_to_hash = encode_utf8($content . time . rand());
     my $id = substr(sha1_hex($string_to_hash), 0, 10);
+    $c->trace_log('info', "Generated new paste ID: $id");
 
-    my $doc = {
-        _id      => $id,
-        content  => $content,
-        language => lc($lang),
-        created  => time(),
-    };
+    my $doc = { _id => $id, content => $content, language => lc($lang), created => time(), };
 
     $db_requests_counter->inc();
-        $db->save($doc);
-    $c->app->log->info("Fired save request for ID '$id'. Redirecting immediately.");
+    $c->trace_log('info', "Attempting to save document to CouchDB...");
+    $db->save($doc);
+    
+    $c->trace_log('info', "Successfully saved document. Redirecting immediately.");
     $c->redirect_to("/paste/" . $id);
 };
 
+# --- И ИЗМЕНЕНИЕ ЗДЕСЬ ---
 get '/paste/:id' => sub {
     my $c = shift;
     my $id = $c->param('id');
+    $c->trace_log('info', "Received request to view paste with ID: $id");
     
     $db_requests_counter->inc();
+    $c->trace_log('info', "Attempting to fetch document from CouchDB...");
     my $doc = eval { $db->get($id) };
 
     if ($@ || !$doc) {
-        $c->app->log->warn("Document not found for ID '$id'. Error: $@") if $@;
+        $c->trace_log('warn', "Document not found for ID '$id'. Error: $@");
         return $c->render(template => 'not_found', status => 404);
     }
+
+    $c->trace_log('info', "Document found. Rendering page.");
     $c->render('paste', paste => $doc);
 };
 
-
 get '/docs' => sub {
     my $c = shift;
-
-    # Эта часть остается без изменений
     my $readme_content = eval { path('README.md')->slurp_utf8 };
-    if ($@ || !$readme_content) {
-        return $c->render(text => 'README.md not found.', status => 404);
-    }
+    if ($@ || !$readme_content) { return $c->render(text => 'README.md not found.', status => 404); }
     my $html = markdown($readme_content);
-
-    # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-    # Вместо того чтобы отдавать текст, мы рендерим наш новый шаблон 'docs'
-    # и передаем в него наш сгенерированный HTML в переменной 'docs_content'.
-    return $c->render(
-        template     => 'docs',
-        docs_content => $html
-    );
+    return $c->render( template => 'docs', docs_content => $html );
 };
 
 app->start;
 
 __DATA__
 
-
 @@ index.html.ep
 % layout 'default';
 % title 'Create New Paste';
-
 <h1>Create a New Paste</h1>
 <form action="/" method="POST">
   <figure>
@@ -280,3 +263,10 @@ __DATA__
     <%= content_for 'scripts' %>
 </body>
 </html>
+
+@@ docs.html.ep
+% layout 'default';
+% title 'Documentation';
+<div class="container">
+    <%= $docs_content %>
+</div>

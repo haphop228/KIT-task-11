@@ -10,21 +10,20 @@ services:
       - pastebin
 
   pastebin:
-      build: .
-      ports:
-        - "3000:3000"
-      environment:
-        - COUCHDB_URL=http://admin:password@couchdb:5984
-      depends_on:
-        couchdb:
-          condition: service_healthy
-      # --- НОВАЯ СЕКЦИЯ ---
-      healthcheck:
-        # Проверяем, что сервис не просто жив, а готов принимать трафик
-        test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-        interval: 5s
-        timeout: 2s
-        retries: 10
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - COUCHDB_URL=http://admin:password@couchdb:5984
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+    # --- ИЗМЕНЕНИЕ: Секция 'labels' полностью удалена, так как она больше не нужна ---
 
   couchdb:
     image: couchdb:3
@@ -72,6 +71,22 @@ services:
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
+      - loki
+
+  loki:
+    image: grafana/loki:2.9.0
+    ports:
+      - "3101:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki:/etc/loki
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./promtail:/etc/promtail
+      - /var/run/docker.sock:/var/run/docker.sock 
 
   locust:
     image: locustio/locust
@@ -94,16 +109,14 @@ services:
       - prometheus
 
   swagger-ui:
-      image: swaggerapi/swagger-ui:latest
-      ports:
-        - "8081:8080"
-      environment:
-        # --- ИСПРАВЛЕНИЕ 1: Используем имя сервиса, а не localhost ---
-        - URL=http://localhost:8080/openapi.json
-      depends_on:
-        pastebin:
-          # --- ИСПРАВЛЕНИЕ 2: Ждем, пока pastebin не станет 'healthy' ---
-          condition: service_healthy
+    image: swaggerapi/swagger-ui:latest
+    ports:
+      - "8081:8080"
+    environment:
+      - URL=http://localhost:8080/openapi.json
+    depends_on:
+      pastebin:
+        condition: service_healthy
 
   jaeger:
     image: jaegertracing/all-in-one:latest
